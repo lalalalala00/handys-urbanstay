@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { getCleaningTasksList } from "@/lib/queries";
-import { CleaningStatusBadge, RiskBadge } from "@/components/StatusBadges";
+import { CleaningStatusBadge, RiskBadge, CLEANING_TONE } from "@/components/StatusBadges";
+import { StatusFilterCards } from "@/components/StatusFilterCards";
 import { formatBuffer, formatDateTime, formatRelative } from "@/lib/format";
+import type { CleaningTaskStatus } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -11,30 +13,47 @@ const STATUS_GROUPS = [
   { status: "cleaning", label: "진행 중" },
   { status: "inspection", label: "검수 대기" },
   { status: "done", label: "완료" },
-] as const;
+] as const satisfies { status: CleaningTaskStatus; label: string }[];
 
-export default async function CleaningTasksPage() {
-  const tasks = await getCleaningTasksList();
+export default async function CleaningTasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ branch?: string; region?: string; status?: string }>;
+}) {
+  const { branch, region, status } = await searchParams;
+  const tasks = await getCleaningTasksList({ branch, region });
+
+  const activeStatus = STATUS_GROUPS.some((g) => g.status === status)
+    ? (status as CleaningTaskStatus)
+    : undefined;
+  const filteredTasks = activeStatus
+    ? tasks.filter((t) => t.status === activeStatus)
+    : tasks;
+
+  const baseParams = new URLSearchParams();
+  if (branch) baseParams.set("branch", branch);
+  if (region) baseParams.set("region", region);
+  const hrefFor = (next: CleaningTaskStatus | null) => {
+    const params = new URLSearchParams(baseParams);
+    if (next) params.set("status", next);
+    const qs = params.toString();
+    return qs ? `/cleaning?${qs}` : "/cleaning";
+  };
+
+  const counts = Object.fromEntries(
+    STATUS_GROUPS.map((g) => [g.status, tasks.filter((t) => t.status === g.status).length])
+  ) as Record<CleaningTaskStatus, number>;
 
   return (
     <div className="flex flex-col gap-8">
       <h1 className="text-lg font-semibold">청소 작업</h1>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-        {STATUS_GROUPS.map((group) => (
-          <div
-            key={group.status}
-            className="rounded-lg border border-black/10 p-4 dark:border-white/10"
-          >
-            <div className="text-2xl font-semibold">
-              {tasks.filter((t) => t.status === group.status).length}
-            </div>
-            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {group.label}
-            </div>
-          </div>
-        ))}
-      </div>
+      <StatusFilterCards
+        groups={STATUS_GROUPS.map((g) => ({ ...g, tone: CLEANING_TONE[g.status] }))}
+        counts={counts}
+        activeStatus={activeStatus}
+        hrefFor={hrefFor}
+      />
 
       <div className="overflow-x-auto rounded-lg border border-black/10 dark:border-white/10">
         <table className="w-full min-w-180 text-sm">
@@ -50,7 +69,7 @@ export default async function CleaningTasksPage() {
             </tr>
           </thead>
           <tbody>
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <tr
                 key={task.id}
                 className="border-t border-black/5 dark:border-white/5"
@@ -83,10 +102,10 @@ export default async function CleaningTasksPage() {
                 </td>
               </tr>
             ))}
-            {tasks.length === 0 && (
+            {filteredTasks.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-6 text-center text-gray-500">
-                  청소 작업이 없습니다.
+                  {activeStatus ? "해당 상태의 청소 작업이 없습니다." : "청소 작업이 없습니다."}
                 </td>
               </tr>
             )}

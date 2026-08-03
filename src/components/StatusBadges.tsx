@@ -23,7 +23,7 @@ const ROOM_TONE: Record<RoomStatus, Tone> = {
   ready: "success",
 };
 
-const CLEANING_TONE: Record<CleaningTaskStatus, Tone> = {
+export const CLEANING_TONE: Record<CleaningTaskStatus, Tone> = {
   unassigned: "danger",
   assigned: "info",
   cleaning: "info",
@@ -31,7 +31,7 @@ const CLEANING_TONE: Record<CleaningTaskStatus, Tone> = {
   done: "success",
 };
 
-const ISSUE_STATUS_TONE: Record<IssueStatus, Tone> = {
+export const ISSUE_STATUS_TONE: Record<IssueStatus, Tone> = {
   new: "danger",
   checking: "warning",
   assigned: "info",
