@@ -8,6 +8,17 @@ export function formatDateTime(iso: string | null): string {
   });
 }
 
+export function isToday(iso: string | null): boolean {
+  if (!iso) return false;
+  const d = new Date(iso);
+  const now = new Date();
+  return (
+    d.getUTCFullYear() === now.getUTCFullYear() &&
+    d.getUTCMonth() === now.getUTCMonth() &&
+    d.getUTCDate() === now.getUTCDate()
+  );
+}
+
 export function formatRelative(iso: string | null): string {
   if (!iso) return "-";
   const diffMinutes = Math.round(
@@ -27,6 +38,19 @@ export function formatBuffer(minutes: number | null): string {
 export function minutesUntil(iso: string | null): number | null {
   if (!iso) return null;
   return Math.round((new Date(iso).getTime() - Date.now()) / 60000);
+}
+
+export function formatTime(date: Date): string {
+  return date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+}
+
+export function formatDateHeader(date: Date): string {
+  return date.toLocaleDateString("ko-KR", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    weekday: "short",
+  });
 }
 
 export function formatDuration(minutes: number): string {

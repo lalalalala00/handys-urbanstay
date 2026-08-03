@@ -1,24 +1,64 @@
 import { getSupabaseServerClient } from "./supabase-server";
 import { calcRoomPriority, roomSortKey } from "./priority";
-import type { CleaningTask, Issue, Room } from "./types";
+import { branchesInRegion } from "./regions";
+import { isToday } from "./format";
+import type { CleaningTask, Issue, Room, Staff } from "./types";
 
-function isToday(iso: string | null) {
-  if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getUTCFullYear() === now.getUTCFullYear() &&
-    d.getUTCMonth() === now.getUTCMonth() &&
-    d.getUTCDate() === now.getUTCDate()
-  );
-}
+const CLEANING_EVENT_LABEL: Record<CleaningTask["status"], string> = {
+  unassigned: "크루 배정 요청",
+  assigned: "크루 배정 완료",
+  cleaning: "청소 시작",
+  inspection: "검수 대기",
+  done: "청소 완료",
+};
 
-export async function getDashboardData() {
+const CLEANING_EVENT_CATEGORY: Record<CleaningTask["status"], "assignment" | "cleaning"> = {
+  unassigned: "assignment",
+  assigned: "assignment",
+  cleaning: "cleaning",
+  inspection: "cleaning",
+  done: "cleaning",
+};
+
+const ISSUE_EVENT_LABEL: Record<Issue["status"], string> = {
+  new: "이상 신고 접수",
+  checking: "이상 신고 확인 중",
+  assigned: "이상 신고 담당자 배정",
+  in_progress: "이상 신고 처리 중",
+  inspection: "이상 신고 검수 대기",
+  done: "이상 신고 처리 완료",
+};
+
+export type ActivityCategory = "assignment" | "cleaning" | "issue";
+
+export type ActivityItem = {
+  id: string;
+  room: string;
+  action: string;
+  time: Date;
+  done: boolean;
+  category: ActivityCategory;
+};
+
+export async function getDashboardData(filter?: { branch?: string; region?: string }) {
   const supabase = getSupabaseServerClient();
 
-  const [roomsRes, tasksRes, issuesRes] = await Promise.all([
-    supabase.from("rooms").select("*"),
-    supabase.from("cleaning_tasks").select("*, assignee:staff(id, name, role)"),
+  const branch = filter?.branch;
+  const regionBranches = !branch && filter?.region ? branchesInRegion(filter.region) : [];
+
+  let roomsQuery = supabase.from("rooms").select("*");
+  if (branch) {
+    roomsQuery = roomsQuery.eq("branch", branch);
+  } else if (regionBranches.length > 0) {
+    roomsQuery = roomsQuery.in("branch", regionBranches);
+  }
+  const isFiltered = Boolean(branch) || regionBranches.length > 0;
+
+  const [roomsRes, tasksRes, issuesRes, allIssuesRes, staffRes] = await Promise.all([
+    roomsQuery,
+    supabase
+      .from("cleaning_tasks")
+      .select("*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)"),
     supabase
       .from("issues")
       .select(
@@ -27,14 +67,28 @@ export async function getDashboardData() {
       .neq("status", "done")
       .order("urgency", { ascending: true })
       .order("created_at", { ascending: true }),
+    supabase
+      .from("issues")
+      .select(
+        "*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)"
+      )
+      .order("updated_at", { ascending: false })
+      .limit(50),
+    supabase.from("staff").select("*").eq("role", "cleaner").order("name"),
   ]);
 
-  const firstError = roomsRes.error || tasksRes.error || issuesRes.error;
+  const firstError =
+    roomsRes.error || tasksRes.error || issuesRes.error || allIssuesRes.error || staffRes.error;
   if (firstError) throw new Error(firstError.message);
 
   const rooms = (roomsRes.data ?? []) as Room[];
-  const tasks = (tasksRes.data ?? []) as CleaningTask[];
-  const issues = (issuesRes.data ?? []) as Issue[];
+  const roomIds = new Set(rooms.map((r) => r.id));
+  const tasks = ((tasksRes.data ?? []) as CleaningTask[]).filter((t) =>
+    roomIds.has(t.room_id)
+  );
+  const issues = ((issuesRes.data ?? []) as Issue[]).filter((i) => roomIds.has(i.room_id));
+  const allIssues = ((allIssuesRes.data ?? []) as Issue[]).filter((i) => roomIds.has(i.room_id));
+  const cleaners = (staffRes.data ?? []) as Staff[];
 
   const latestTaskByRoom = new Map<string, CleaningTask>();
   for (const task of tasks) {
@@ -71,7 +125,140 @@ export async function getDashboardData() {
     ).length,
   };
 
-  return { summary, priorityRooms, openIssues: issues };
+  const scopedCleaners = isFiltered
+    ? cleaners.filter((member) => tasks.some((t) => t.assignee_id === member.id))
+    : cleaners;
+
+  const crew = scopedCleaners.map((member) => {
+    const myTasks = tasks.filter(
+      (t) => t.assignee_id === member.id && t.status !== "done"
+    );
+    const cleaningTask = myTasks.find((t) => t.status === "cleaning");
+    const inspectionTask = myTasks.find((t) => t.status === "inspection");
+    const assignedTask = myTasks.find((t) => t.status === "assigned");
+    const activeTask = cleaningTask ?? inspectionTask ?? assignedTask ?? null;
+
+    let working = false;
+    let progress: number | null = null;
+    if (cleaningTask) {
+      working = true;
+      progress = cleaningTask.started_at
+        ? Math.min(
+            100,
+            Math.round(
+              ((Date.now() - new Date(cleaningTask.started_at).getTime()) /
+                60000 /
+                cleaningTask.estimated_minutes) *
+                100
+            )
+          )
+        : 0;
+    } else if (inspectionTask) {
+      working = true;
+      progress = 100;
+    } else if (assignedTask) {
+      progress = 0;
+    }
+
+    return {
+      staff: member,
+      working,
+      progress,
+      activeCount: myTasks.length,
+      branch: activeTask?.room?.branch ?? null,
+    };
+  });
+
+  const activityHistory: ActivityItem[] = [
+    ...tasks.map((task) => {
+      const room = task.room ? `${task.room.branch} ${task.room.room_number}호` : "객실";
+      const time =
+        task.status === "done" && task.completed_at
+          ? task.completed_at
+          : task.status === "cleaning" && task.started_at
+            ? task.started_at
+            : task.updated_at;
+      return {
+        id: `task-${task.id}`,
+        room,
+        action: CLEANING_EVENT_LABEL[task.status],
+        time: new Date(time),
+        done: task.status === "done",
+        category: CLEANING_EVENT_CATEGORY[task.status],
+      };
+    }),
+    ...allIssues.map((issue) => {
+      const room = issue.room
+        ? `${issue.room.branch} ${issue.room.room_number}호`
+        : "객실";
+      return {
+        id: `issue-${issue.id}`,
+        room,
+        action: ISSUE_EVENT_LABEL[issue.status],
+        time: new Date(issue.updated_at),
+        done: issue.status === "done",
+        category: "issue" as const,
+      };
+    }),
+  ].sort((a, b) => b.time.getTime() - a.time.getTime());
+
+  const activity = activityHistory.slice(0, 5);
+
+  const STATUS_BUCKET: Record<Room["status"], "normal" | "urgent" | "inspection" | "assigned"> = {
+    ready: "normal",
+    occupied: "normal",
+    issue: "urgent",
+    dirty: "urgent",
+    inspection: "inspection",
+    assigned: "assigned",
+    cleaning: "assigned",
+  };
+  const roomStatusDistribution = {
+    normal: 0,
+    urgent: 0,
+    inspection: 0,
+    assigned: 0,
+  };
+  for (const room of rooms) {
+    roomStatusDistribution[STATUS_BUCKET[room.status]] += 1;
+  }
+
+  const checkinHourCounts = new Map<number, number>();
+  for (const room of rooms) {
+    if (!room.next_checkin_at) continue;
+    const hour = new Date(room.next_checkin_at).getHours();
+    checkinHourCounts.set(hour, (checkinHourCounts.get(hour) ?? 0) + 1);
+  }
+  let checkinPeakHour: number | null = null;
+  let peakCount = 0;
+  for (const [hour, count] of checkinHourCounts) {
+    if (count > peakCount) {
+      peakCount = count;
+      checkinPeakHour = hour;
+    }
+  }
+
+  return {
+    summary,
+    priorityRooms,
+    openIssues: issues,
+    crew,
+    activity,
+    activityHistory,
+    roomStatusDistribution,
+    totalRooms: rooms.length,
+    checkinPeakHour: peakCount > 1 ? checkinPeakHour : null,
+  };
+}
+
+export async function getOpenAlertsCount() {
+  const supabase = getSupabaseServerClient();
+  const { count, error } = await supabase
+    .from("issues")
+    .select("id", { count: "exact", head: true })
+    .neq("status", "done");
+  if (error) throw new Error(error.message);
+  return count ?? 0;
 }
 
 export async function getCleaningTasksList() {
@@ -136,6 +323,38 @@ export async function getIssueById(id: string) {
     .single();
   if (error) throw new Error(error.message);
   return data as Issue;
+}
+
+export async function getRoomDetail(id: string) {
+  const supabase = getSupabaseServerClient();
+
+  const [roomRes, taskRes, issuesRes] = await Promise.all([
+    supabase.from("rooms").select("*").eq("id", id).single(),
+    supabase
+      .from("cleaning_tasks")
+      .select("*, assignee:staff(id, name, role)")
+      .eq("room_id", id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("issues")
+      .select("*, assignee:staff(id, name, role)")
+      .eq("room_id", id)
+      .neq("status", "done")
+      .order("urgency", { ascending: true })
+      .order("created_at", { ascending: true }),
+  ]);
+
+  if (roomRes.error) throw new Error(roomRes.error.message);
+  if (taskRes.error) throw new Error(taskRes.error.message);
+  if (issuesRes.error) throw new Error(issuesRes.error.message);
+
+  return {
+    room: roomRes.data as Room,
+    task: (taskRes.data as CleaningTask | null) ?? null,
+    issues: (issuesRes.data ?? []) as Issue[],
+  };
 }
 
 export async function getRoomsForSelect() {
