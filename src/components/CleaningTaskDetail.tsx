@@ -1,32 +1,45 @@
 import { CleaningStatusBadge, RiskBadge, RoomStatusBadge } from "@/components/StatusBadges";
 import { CleaningProgressTimeline } from "@/components/CleaningProgressTimeline";
 import { CleaningTaskActions } from "@/components/CleaningTaskActions";
+import { CleaningInspectionPanel } from "@/components/CleaningInspectionPanel";
+import { RoomModalHeader } from "@/components/RoomModalHeader";
 import { formatBuffer, formatDateTime, minutesUntil } from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";
 import { CLEANING_TASK_NEXT } from "@/lib/transitions";
 import type { CleaningTask, Room, Staff } from "@/lib/types";
 
+// These transitions now happen automatically via dedicated actions
+// (crew assignment, complete-with-photo, manager confirm) instead of the
+// generic status-change buttons.
+const AUTO_HANDLED_TRANSITIONS: Record<string, string[]> = {
+  unassigned: ["assigned"],
+  cleaning: ["inspection"],
+  inspection: ["done"],
+};
+
 export function CleaningTaskDetail({
   task,
   room,
   cleaners,
+  managers,
+  operator,
 }: {
   task: CleaningTask;
   room: Room;
   cleaners: Staff[];
+  managers: Staff[];
+  operator: Staff | null;
 }) {
   const priority = calcRoomPriority(room, task);
   const checkinMinutes = minutesUntil(room.next_checkin_at);
+  const manualAllowedNext = CLEANING_TASK_NEXT[task.status].filter(
+    (next) => !AUTO_HANDLED_TRANSITIONS[task.status]?.includes(next)
+  );
+  const defaultManager = managers.find((m) => m.branch === room.branch) ?? null;
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <span aria-hidden>📍</span>
-          <span>{room.branch}</span>
-        </div>
-        <h2 className="mt-0.5 text-lg font-semibold">{room.room_number}호</h2>
-      </div>
+      <RoomModalHeader room={room} operator={operator} crewName={task.assignee?.name ?? null} />
 
       <CleaningProgressTimeline status={task.status} />
 
@@ -44,7 +57,7 @@ export function CleaningTaskDetail({
         <Field label="체크아웃">{formatDateTime(room.checkout_at)}</Field>
         <Field label="다음 체크인">{formatDateTime(room.next_checkin_at)}</Field>
         <Field label="청소 시작">{formatDateTime(task.started_at)}</Field>
-        <Field label="담당자">{task.assignee?.name ?? "미배정"}</Field>
+        <Field label="크루">{task.assignee?.name ?? "미배정"}</Field>
       </div>
 
       <CleaningTaskActions
@@ -52,8 +65,15 @@ export function CleaningTaskDetail({
         status={task.status}
         assigneeId={task.assignee_id}
         cleaners={cleaners}
-        allowedNext={CLEANING_TASK_NEXT[task.status]}
+        allowedNext={manualAllowedNext}
         checkinMinutes={checkinMinutes}
+      />
+
+      <CleaningInspectionPanel
+        taskId={task.id}
+        status={task.status}
+        managers={managers}
+        defaultManager={defaultManager}
       />
     </div>
   );

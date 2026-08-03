@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getIssueById, getStaffList } from "@/lib/queries";
+import { getIssueById, getStaffList, getRoomCrew } from "@/lib/queries";
 import { IssueDetail } from "@/components/IssueDetail";
 
 export const dynamic = "force-dynamic";
@@ -21,13 +21,14 @@ export default async function IssueDetailPage({
   if (!issue || !issue.room) notFound();
 
   const staffList = await getStaffList();
+  const crew = await getRoomCrew(issue.room_id);
 
   return (
     <div className="flex flex-col gap-6">
       <Link href="/issues" className="text-xs text-gray-500 hover:underline">
         ← 객실 이슈 목록
       </Link>
-      <IssueDetail issue={issue} room={issue.room} staffList={staffList} />
+      <IssueDetail issue={issue} room={issue.room} staffList={staffList} crew={crew} />
     </div>
   );
 }

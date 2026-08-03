@@ -1,6 +1,8 @@
-import { IssueStatusBadge, RoomStatusBadge, UrgencyBadge } from "@/components/StatusBadges";
+import { IssueStatusBadge, UrgencyBadge } from "@/components/StatusBadges";
 import { IssueActions } from "@/components/IssueActions";
-import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
+import { IssueChat } from "@/components/IssueChat";
+import { RoomModalHeader } from "@/components/RoomModalHeader";
+import { ISSUE_CATEGORY_LABEL, ISSUE_STATUS_LABEL } from "@/lib/labels";
 import { formatDateTime } from "@/lib/format";
 import { ISSUE_STATUS_NEXT } from "@/lib/transitions";
 import { CATEGORY_DEFAULT_ROLE } from "@/lib/types";
@@ -10,27 +12,25 @@ export function IssueDetail({
   issue,
   room,
   staffList,
+  crew,
 }: {
   issue: Issue;
   room: Room;
   staffList: Staff[];
+  crew: Staff | null;
 }) {
   const suggestedRole = CATEGORY_DEFAULT_ROLE[issue.category];
 
   return (
     <div className="flex flex-col gap-6">
-      <div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <span aria-hidden>📍</span>
-          <span>{room.branch}</span>
-        </div>
-        <h2 className="mt-0.5 text-lg font-semibold">{room.room_number}호 이슈</h2>
-      </div>
+      <RoomModalHeader
+        room={room}
+        operator={issue.assignee ?? null}
+        crewName={crew?.name ?? null}
+        titleSuffix="이슈"
+      />
 
       <div className="grid grid-cols-2 gap-4 rounded-lg border border-black/10 p-4 text-sm sm:grid-cols-4 dark:border-white/10">
-        <Field label="객실 상태">
-          <RoomStatusBadge status={room.status} />
-        </Field>
         <Field label="처리 상태">
           <IssueStatusBadge status={issue.status} />
         </Field>
@@ -57,6 +57,26 @@ export function IssueDetail({
           </p>
         )}
       </div>
+
+      <div className="rounded-lg border border-black/10 p-4 dark:border-white/10">
+        <div className="flex items-center gap-1.5 text-sm font-medium">
+          AI 요약
+          <span className="rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+            BETA
+          </span>
+        </div>
+        <p className="mt-3 text-sm text-foreground/80">
+          {room.room_number}호에서 접수된 {ISSUE_CATEGORY_LABEL[issue.category]} 이슈입니다.
+          게스트가 &ldquo;{issue.description}&rdquo;라고 신고했으며, 현재{" "}
+          {ISSUE_STATUS_LABEL[issue.status]} 상태입니다. 긴급도가{" "}
+          {issue.urgency === "urgent" ? "높으니 우선 조치가 필요합니다." : "높지 않아 순차 처리가 가능합니다."}
+        </p>
+        <p className="mt-3 text-[11px] text-gray-400 dark:text-gray-500">
+          ※ AI 요약은 참고용으로 실제 상황과 다를 수 있습니다.
+        </p>
+      </div>
+
+      <IssueChat issue={issue} />
 
       <IssueActions
         issueId={issue.id}

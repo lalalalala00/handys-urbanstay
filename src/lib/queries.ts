@@ -343,6 +343,37 @@ export async function getIssueById(id: string) {
   return data as Issue;
 }
 
+// The operator handling this room's issues, for the shared modal header
+// (mirrors the `operator` logic in getRoomDetail).
+export async function getRoomOperator(roomId: string): Promise<Staff | null> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("issues")
+    .select("assignee:staff(id, name, role, branch)")
+    .eq("room_id", roomId)
+    .neq("status", "done")
+    .not("assignee_id", "is", null)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.assignee as unknown as Staff | null) ?? null;
+}
+
+// The crew assigned to this room's latest cleaning task, for the shared
+// modal header.
+export async function getRoomCrew(roomId: string): Promise<Staff | null> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("cleaning_tasks")
+    .select("assignee:staff(id, name, role, branch)")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.assignee as unknown as Staff | null) ?? null;
+}
+
 export type RoomActivityItem = {
   id: string;
   time: Date;

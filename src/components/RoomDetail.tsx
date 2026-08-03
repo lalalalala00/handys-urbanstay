@@ -2,12 +2,12 @@ import Link from "next/link";
 import {
   CleaningStatusBadge,
   IssueStatusBadge,
-  RoomStatusBadge,
   UrgencyBadge,
 } from "@/components/StatusBadges";
 import { Badge } from "@/components/Badge";
 import { DoorLockField } from "@/components/DoorLockField";
 import { AIIssueSummary } from "@/components/AIIssueSummary";
+import { RoomModalHeader } from "@/components/RoomModalHeader";
 import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
 import {
   formatDateTimeWithDay,
@@ -16,15 +16,7 @@ import {
   isToday,
   minutesUntil,
 } from "@/lib/format";
-import { regionForBranch } from "@/lib/regions";
-import {
-  CalendarIcon,
-  CheckCircleIcon,
-  CrewIcon,
-  IssueIcon,
-  LocationIcon,
-  LockIcon,
-} from "@/components/icons";
+import { CalendarIcon, CheckCircleIcon, CrewIcon, IssueIcon, LockIcon } from "@/components/icons";
 import type { CleaningTask, Issue, Room, Staff } from "@/lib/types";
 import type { RoomActivityItem } from "@/lib/queries";
 import type { RoomPriority } from "@/lib/priority";
@@ -53,34 +45,22 @@ export function RoomDetail({
           new Date(room.next_checkin_at).getTime() + room.nights * 86400000
         ).toISOString();
 
-  const region = regionForBranch(room.branch);
   const minsUntilCheckin = minutesUntil(room.next_checkin_at);
+  // When a room has both an active cleaning task and an open issue, the
+  // modal is reached from a combined "priority room" entry point that only
+  // cares about those two things — skip reservation/door-lock details and
+  // the heavier activity/AI sections.
+  const isCombinedView = Boolean(task) && issues.length > 0;
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-            <LocationIcon className="h-3.5 w-3.5" />
-            <span>{room.branch}</span>
-          </div>
-          <div className="mt-1 flex items-center gap-2">
-            <h2 className="text-xl font-semibold">{room.room_number}호</h2>
-            <RoomStatusBadge status={room.status} />
-          </div>
-          {region && (
-            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {region.city} &gt; {region.district}
-            </div>
-          )}
-        </div>
+      <RoomModalHeader
+        room={room}
+        operator={operator}
+        crewName={task?.assignee?.name ?? null}
+      />
 
-        <div className="flex items-center gap-5">
-          <PersonField label="담당 운영자" name={operator?.name ?? null} sub={room.branch} />
-          <PersonField label="담당 크루" name={task?.assignee?.name ?? null} />
-        </div>
-      </div>
-
+      {!isCombinedView && (
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[3fr_1fr]">
         <div className="rounded-lg border border-black/10 p-4 dark:border-white/10">
           <div className="mb-3 flex items-center gap-1.5 text-sm font-medium">
@@ -145,6 +125,7 @@ export function RoomDetail({
           <DoorLockField code={room.door_lock_code ?? "-"} />
         </div>
       </div>
+      )}
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2.5fr_1.5fr]">
         <div className="rounded-lg border border-black/10 p-4 dark:border-white/10">
@@ -227,6 +208,8 @@ export function RoomDetail({
         </div>
       </div>
 
+      {!isCombinedView && (
+      <>
       <div className="rounded-lg border border-black/10 p-4 dark:border-white/10">
         <div className="mb-3 text-sm font-medium">최근 활동</div>
         {activity.length > 0 ? (
@@ -275,6 +258,8 @@ export function RoomDetail({
           }))}
         />
       )}
+      </>
+      )}
     </div>
   );
 }
@@ -284,35 +269,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div>
       <div className="text-xs text-gray-500 dark:text-gray-400">{label}</div>
       <div className="mt-1 text-sm">{children}</div>
-    </div>
-  );
-}
-
-function PersonField({
-  label,
-  name,
-  sub,
-}: {
-  label: string;
-  name: string | null;
-  sub?: string;
-}) {
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sage text-xs font-semibold text-primary-hover">
-        {name ? name.slice(0, 1) : "-"}
-      </div>
-      <div className="leading-tight">
-        <div className="text-[11px] whitespace-nowrap text-gray-500 dark:text-gray-400">
-          {label}
-        </div>
-        <div className="text-sm font-medium whitespace-nowrap">{name ?? "미배정"}</div>
-        {name && sub && (
-          <div className="text-[11px] whitespace-nowrap text-gray-500 dark:text-gray-400">
-            {sub}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
