@@ -410,7 +410,7 @@ export default async function DashboardPage({
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         {task && roomIssue ? (
                           <Link
-                            href={`/rooms/${room.id}`}
+                            href={`/rooms/${room.id}?view=compact`}
                             className="font-medium text-primary hover:underline"
                           >
                             상세보기

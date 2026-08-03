@@ -7,10 +7,13 @@ export const dynamic = "force-dynamic";
 
 export default async function RoomModal({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ view?: string }>;
 }) {
   const { id } = await params;
+  const { view } = await searchParams;
 
   let detail;
   try {
@@ -29,6 +32,7 @@ export default async function RoomModal({
         priority={detail.priority}
         operator={detail.operator}
         activity={detail.activity}
+        compact={view === "compact"}
       />
     </Modal>
   );

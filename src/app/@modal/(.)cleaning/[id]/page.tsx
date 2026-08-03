@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getCleaningTaskById, getStaffList, getRoomOperator } from "@/lib/queries";
+import { getCleaningTaskById, getStaffList } from "@/lib/queries";
 import { CleaningTaskDetail } from "@/components/CleaningTaskDetail";
 import { Modal } from "@/components/Modal";
 
@@ -23,17 +23,10 @@ export default async function CleaningTaskModal({
   const staffList = await getStaffList();
   const cleaners = staffList.filter((s) => s.role === "cleaner");
   const managers = staffList.filter((s) => s.role === "manager");
-  const operator = await getRoomOperator(task.room_id);
 
   return (
-    <Modal>
-      <CleaningTaskDetail
-        task={task}
-        room={task.room}
-        cleaners={cleaners}
-        managers={managers}
-        operator={operator}
-      />
+    <Modal wide>
+      <CleaningTaskDetail task={task} room={task.room} cleaners={cleaners} managers={managers} />
     </Modal>
   );
 }

@@ -172,3 +172,14 @@ export function LockIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function ActionIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="4.5" y="4" width="15" height="17" rx="2" />
+      <path d="M9 4V3.3a1.3 1.3 0 0 1 1.3-1.3h3.4A1.3 1.3 0 0 1 15 3.3V4" />
+      <path d="M8.5 12h7" />
+      <path d="M8.5 16h5" />
+    </svg>
+  );
+}

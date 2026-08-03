@@ -1,24 +1,21 @@
-import { CLEANING_STATUS_LABEL } from "@/lib/labels";
-import type { CleaningTaskStatus } from "@/lib/types";
-
-const STEPS: CleaningTaskStatus[] = [
-  "unassigned",
-  "assigned",
-  "cleaning",
-  "inspection",
-  "done",
-];
-
-export function CleaningProgressTimeline({ status }: { status: CleaningTaskStatus }) {
-  const currentIndex = STEPS.indexOf(status);
+export function ProgressTimeline<T extends string>({
+  steps,
+  labelMap,
+  current,
+}: {
+  steps: T[];
+  labelMap: Record<T, string>;
+  current: T;
+}) {
+  const currentIndex = steps.indexOf(current);
 
   return (
     <div className="flex w-full">
-      {STEPS.map((step, i) => {
+      {steps.map((step, i) => {
         const isDone = i < currentIndex;
         const isCurrent = i === currentIndex;
         const leftFilled = i > 0 && i - 1 < currentIndex;
-        const rightFilled = i < STEPS.length - 1 && i < currentIndex;
+        const rightFilled = i < steps.length - 1 && i < currentIndex;
 
         return (
           <div key={step} className="flex flex-1 flex-col items-center">
@@ -45,7 +42,7 @@ export function CleaningProgressTimeline({ status }: { status: CleaningTaskStatu
               </div>
               <div
                 className={`h-0.5 flex-1 ${
-                  i === STEPS.length - 1
+                  i === steps.length - 1
                     ? "invisible"
                     : rightFilled
                       ? "bg-foreground"
@@ -60,7 +57,7 @@ export function CleaningProgressTimeline({ status }: { status: CleaningTaskStatu
                   : "text-gray-500 dark:text-gray-400"
               }`}
             >
-              {CLEANING_STATUS_LABEL[step]}
+              {labelMap[step]}
             </div>
           </div>
         );

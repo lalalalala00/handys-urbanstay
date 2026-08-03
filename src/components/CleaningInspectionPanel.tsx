@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { ActionDivider } from "@/components/ActionPanel";
 import type { CleaningTaskStatus, Staff } from "@/lib/types";
 
 export function CleaningInspectionPanel({
@@ -9,15 +10,18 @@ export function CleaningInspectionPanel({
   status,
   managers,
   defaultManager,
+  managerName,
+  onManagerChange,
 }: {
   taskId: string;
   status: CleaningTaskStatus;
   managers: Staff[];
   defaultManager: Staff | null;
+  managerName: string | null;
+  onManagerChange: (name: string) => void;
 }) {
   const router = useRouter();
   const [selectedManager, setSelectedManager] = useState(defaultManager?.name ?? "");
-  const [managerName, setManagerName] = useState<string | null>(defaultManager?.name ?? null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -46,7 +50,7 @@ export function CleaningInspectionPanel({
   }
 
   return (
-    <div className="flex flex-col gap-5 rounded-lg border border-black/10 p-5 dark:border-white/10">
+    <>
       <div>
         <div className="mb-2 text-sm font-medium">
           담당자{" "}
@@ -60,6 +64,8 @@ export function CleaningInspectionPanel({
           청소 완료 처리(사진 첨부) 후 검수 단계에서 변경할 수 있습니다.
         </p>
       </div>
+
+      {(status === "cleaning" || status === "inspection") && <ActionDivider />}
 
       {status === "cleaning" && (
         <div>
@@ -122,7 +128,7 @@ export function CleaningInspectionPanel({
             </select>
             <button
               disabled={!selectedManager || selectedManager === managerName}
-              onClick={() => setManagerName(selectedManager)}
+              onClick={() => onManagerChange(selectedManager)}
               className="rounded bg-foreground px-3 py-1.5 text-sm text-background disabled:opacity-40"
             >
               담당자 변경
@@ -143,6 +149,6 @@ export function CleaningInspectionPanel({
       )}
 
       {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
-    </div>
+    </>
   );
 }

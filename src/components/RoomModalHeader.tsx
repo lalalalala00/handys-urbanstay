@@ -1,16 +1,16 @@
 import { RoomStatusBadge } from "@/components/StatusBadges";
 import { LocationIcon } from "@/components/icons";
 import { regionForBranch } from "@/lib/regions";
-import type { Room, Staff } from "@/lib/types";
+import type { Room } from "@/lib/types";
 
 export function RoomModalHeader({
   room,
-  operator,
+  operatorName,
   crewName,
   titleSuffix,
 }: {
   room: Room;
-  operator: Staff | null;
+  operatorName: string | null;
   crewName: string | null;
   titleSuffix?: string;
 }) {
@@ -37,7 +37,7 @@ export function RoomModalHeader({
       </div>
 
       <div className="flex items-center gap-5">
-        <PersonField label="담당 운영자" name={operator?.name ?? null} sub={room.branch} />
+        <PersonField label="담당 운영자" name={operatorName} sub={room.branch} />
         <PersonField label="담당 크루" name={crewName} />
       </div>
     </div>

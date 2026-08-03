@@ -1,5 +1,24 @@
 import type { CleaningTaskStatus, IssueStatus, RoomStatus } from "./types";
 
+// The canonical step order for each status, used by ProgressTimeline and to
+// tell "the very next step" apart from "skipping ahead" in StatusChangeButtons.
+export const CLEANING_STEPS: CleaningTaskStatus[] = [
+  "unassigned",
+  "assigned",
+  "cleaning",
+  "inspection",
+  "done",
+];
+
+export const ISSUE_STEPS: IssueStatus[] = [
+  "new",
+  "checking",
+  "assigned",
+  "in_progress",
+  "inspection",
+  "done",
+];
+
 // Allowed forward transitions. `inspection -> cleaning` covers a failed
 // inspection (재청소); everything else only moves forward.
 export const CLEANING_TASK_NEXT: Record<CleaningTaskStatus, CleaningTaskStatus[]> = {

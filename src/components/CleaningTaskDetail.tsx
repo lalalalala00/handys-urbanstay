@@ -1,11 +1,18 @@
+"use client";
+
+import { useState } from "react";
 import { CleaningStatusBadge, RiskBadge, RoomStatusBadge } from "@/components/StatusBadges";
-import { CleaningProgressTimeline } from "@/components/CleaningProgressTimeline";
+import { ProgressTimeline } from "@/components/ProgressTimeline";
 import { CleaningTaskActions } from "@/components/CleaningTaskActions";
+import { CleaningCrewAssignment } from "@/components/CleaningCrewAssignment";
+import { CleaningCrewReassignment } from "@/components/CleaningCrewReassignment";
 import { CleaningInspectionPanel } from "@/components/CleaningInspectionPanel";
 import { RoomModalHeader } from "@/components/RoomModalHeader";
+import { ActionPanel, ActionDivider } from "@/components/ActionPanel";
+import { CLEANING_STATUS_LABEL } from "@/lib/labels";
 import { formatBuffer, formatDateTime, minutesUntil } from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";
-import { CLEANING_TASK_NEXT } from "@/lib/transitions";
+import { CLEANING_TASK_NEXT, CLEANING_STEPS } from "@/lib/transitions";
 import type { CleaningTask, Room, Staff } from "@/lib/types";
 
 // These transitions now happen automatically via dedicated actions
@@ -22,13 +29,11 @@ export function CleaningTaskDetail({
   room,
   cleaners,
   managers,
-  operator,
 }: {
   task: CleaningTask;
   room: Room;
   cleaners: Staff[];
   managers: Staff[];
-  operator: Staff | null;
 }) {
   const priority = calcRoomPriority(room, task);
   const checkinMinutes = minutesUntil(room.next_checkin_at);
@@ -36,45 +41,73 @@ export function CleaningTaskDetail({
     (next) => !AUTO_HANDLED_TRANSITIONS[task.status]?.includes(next)
   );
   const defaultManager = managers.find((m) => m.branch === room.branch) ?? null;
+  const [managerName, setManagerName] = useState<string | null>(defaultManager?.name ?? null);
 
   return (
     <div className="flex flex-col gap-6">
-      <RoomModalHeader room={room} operator={operator} crewName={task.assignee?.name ?? null} />
+      <RoomModalHeader
+        room={room}
+        operatorName={managerName}
+        crewName={task.assignee?.name ?? null}
+      />
 
-      <CleaningProgressTimeline status={task.status} />
+      <ProgressTimeline steps={CLEANING_STEPS} labelMap={CLEANING_STATUS_LABEL} current={task.status} />
 
-      <div className="grid grid-cols-2 gap-4 rounded-lg border border-black/10 p-4 text-sm sm:grid-cols-4 dark:border-white/10">
-        <Field label="객실 상태">
-          <RoomStatusBadge status={room.status} />
-        </Field>
-        <Field label="청소 상태">
-          <CleaningStatusBadge status={task.status} />
-        </Field>
-        <Field label="여유 시간">
-          <RiskBadge level={priority.riskLevel} label={formatBuffer(priority.bufferMinutes)} />
-        </Field>
-        <Field label="예상 소요 시간">{task.estimated_minutes}분</Field>
-        <Field label="체크아웃">{formatDateTime(room.checkout_at)}</Field>
-        <Field label="다음 체크인">{formatDateTime(room.next_checkin_at)}</Field>
-        <Field label="청소 시작">{formatDateTime(task.started_at)}</Field>
-        <Field label="크루">{task.assignee?.name ?? "미배정"}</Field>
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[2fr_1fr]">
+        <div className="flex flex-col gap-6">
+          <div className="grid grid-cols-2 gap-4 rounded-lg border border-black/10 p-4 text-sm sm:grid-cols-4 dark:border-white/10">
+            <Field label="객실 상태">
+              <RoomStatusBadge status={room.status} />
+            </Field>
+            <Field label="청소 상태">
+              <CleaningStatusBadge status={task.status} />
+            </Field>
+            <Field label="여유 시간">
+              <RiskBadge level={priority.riskLevel} label={formatBuffer(priority.bufferMinutes)} />
+            </Field>
+            <Field label="예상 소요 시간">{task.estimated_minutes}분</Field>
+            <Field label="체크아웃">{formatDateTime(room.checkout_at)}</Field>
+            <Field label="다음 체크인">{formatDateTime(room.next_checkin_at)}</Field>
+            <Field label="청소 시작">{formatDateTime(task.started_at)}</Field>
+            <Field label="크루">{task.assignee?.name ?? "미배정"}</Field>
+          </div>
+
+          {task.status === "unassigned" && (
+            <CleaningCrewAssignment taskId={task.id} checkinMinutes={checkinMinutes} />
+          )}
+        </div>
+
+        <ActionPanel>
+          {task.status !== "unassigned" && (
+            <>
+              <CleaningCrewReassignment
+                taskId={task.id}
+                assigneeId={task.assignee_id}
+                cleaners={cleaners}
+              />
+
+              <ActionDivider />
+            </>
+          )}
+
+          <CleaningTaskActions
+            taskId={task.id}
+            status={task.status}
+            allowedNext={manualAllowedNext}
+          />
+
+          <ActionDivider />
+
+          <CleaningInspectionPanel
+            taskId={task.id}
+            status={task.status}
+            managers={managers}
+            defaultManager={defaultManager}
+            managerName={managerName}
+            onManagerChange={setManagerName}
+          />
+        </ActionPanel>
       </div>
-
-      <CleaningTaskActions
-        taskId={task.id}
-        status={task.status}
-        assigneeId={task.assignee_id}
-        cleaners={cleaners}
-        allowedNext={manualAllowedNext}
-        checkinMinutes={checkinMinutes}
-      />
-
-      <CleaningInspectionPanel
-        taskId={task.id}
-        status={task.status}
-        managers={managers}
-        defaultManager={defaultManager}
-      />
     </div>
   );
 }
