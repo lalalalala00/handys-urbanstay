@@ -34,6 +34,8 @@ export type IssueStatus =
 
 export type StaffRole = "cleaner" | "facility" | "manager";
 
+export type PaymentStatus = "paid" | "unpaid";
+
 export interface Staff {
   id: string;
   name: string;
@@ -47,6 +49,13 @@ export interface Room {
   status: RoomStatus;
   checkout_at: string | null;
   next_checkin_at: string | null;
+  guest_name: string | null;
+  guest_phone: string | null;
+  guest_count: number | null;
+  nights: number | null;
+  payment_status: PaymentStatus | null;
+  payment_amount: number | null;
+  door_lock_code: string | null;
 }
 
 export interface CleaningTask {
@@ -57,6 +66,8 @@ export interface CleaningTask {
   estimated_minutes: number;
   started_at: string | null;
   completed_at: string | null;
+  created_at: string;
+  updated_at: string;
   room?: Room;
   assignee?: Staff | null;
 }
@@ -73,6 +84,7 @@ export interface Issue {
   ai_suggested_category: IssueCategory | null;
   ai_suggested_urgency: IssueUrgency | null;
   created_at: string;
+  updated_at: string;
   room?: Room;
   assignee?: Staff | null;
 }

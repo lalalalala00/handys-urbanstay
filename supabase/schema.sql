@@ -20,6 +20,13 @@ create table rooms (
     check (status in ('occupied', 'dirty', 'assigned', 'cleaning', 'inspection', 'issue', 'ready')),
   checkout_at timestamptz,
   next_checkin_at timestamptz,
+  guest_name text,
+  guest_phone text,
+  guest_count int,
+  nights int,
+  payment_status text check (payment_status in ('paid', 'unpaid')),
+  payment_amount int,
+  door_lock_code text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   unique (branch, room_number)
