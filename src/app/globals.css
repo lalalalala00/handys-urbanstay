@@ -1,21 +1,82 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f8f7f4;
+  --foreground: #2f2f2f;
+  --card: #ffffff;
+  --card-border: #eae7e1;
+  --subtext: #7a7a7a;
+
+  --primary: #556b5d;
+  --primary-hover: #445548;
+
+  --success-bg: #edf8f1;
+  --success-text: #2f8f5b;
+  --success-border: #cbe8d4;
+
+  --warning-bg: #fff7e6;
+  --warning-text: #c98a1e;
+  --warning-border: #f1d59a;
+
+  --danger-bg: #fdeeee;
+  --danger-text: #d75a5a;
+  --danger-border: #f3c4c4;
+
+  --info-bg: #eef5ff;
+  --info-text: #4f7dd8;
+  --info-border: #d4e3ff;
+
+  --sage: #afc4b0;
+  --sand: #e6dccf;
+  --brown: #8c7565;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-border: var(--card-border);
+  --color-subtext: var(--subtext);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+
+  --color-success-bg: var(--success-bg);
+  --color-success-text: var(--success-text);
+  --color-success-border: var(--success-border);
+
+  --color-warning-bg: var(--warning-bg);
+  --color-warning-text: var(--warning-text);
+  --color-warning-border: var(--warning-border);
+
+  --color-danger-bg: var(--danger-bg);
+  --color-danger-text: var(--danger-text);
+  --color-danger-border: var(--danger-border);
+
+  --color-info-bg: var(--info-bg);
+  --color-info-text: var(--info-text);
+  --color-info-border: var(--info-border);
+
+  --color-sage: var(--sage);
+  --color-sand: var(--sand);
+  --color-brown: var(--brown);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #17191a;
     --foreground: #ededed;
+    --card: #1f2223;
+    --card-border: rgba(255, 255, 255, 0.1);
+    --subtext: #9a9a9a;
+
+    --success-bg: rgba(47, 143, 91, 0.15);
+    --warning-bg: rgba(201, 138, 30, 0.15);
+    --danger-bg: rgba(215, 90, 90, 0.15);
+    --info-bg: rgba(79, 125, 216, 0.15);
   }
 }
 
