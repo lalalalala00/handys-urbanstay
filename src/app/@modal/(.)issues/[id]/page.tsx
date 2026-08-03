@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getIssueById, getStaffList } from "@/lib/queries";
 import { IssueDetail } from "@/components/IssueDetail";
+import { Modal } from "@/components/Modal";
 
 export const dynamic = "force-dynamic";
 
-export default async function IssueDetailPage({
+export default async function IssueModal({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -23,11 +23,8 @@ export default async function IssueDetailPage({
   const staffList = await getStaffList();
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/issues" className="text-xs text-gray-500 hover:underline">
-        ← 객실 이슈 목록
-      </Link>
+    <Modal>
       <IssueDetail issue={issue} room={issue.room} staffList={staffList} />
-    </div>
+    </Modal>
   );
 }
