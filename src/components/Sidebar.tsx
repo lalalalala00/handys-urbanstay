@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   CleaningIcon,
   CrewIcon,
@@ -29,6 +29,8 @@ const SOON_LINKS = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const query = searchParams.toString();
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col justify-between border-r border-card-border bg-card px-4 py-5">
@@ -47,7 +49,7 @@ export function Sidebar() {
             return (
               <Link
                 key={link.href}
-                href={link.href}
+                href={query ? `${link.href}?${query}` : link.href}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
                   active
                     ? "bg-success-bg font-medium text-foreground"

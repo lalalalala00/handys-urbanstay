@@ -262,7 +262,7 @@ export async function getOpenAlertsCount() {
   return count ?? 0;
 }
 
-export async function getCleaningTasksList() {
+export async function getCleaningTasksList(filter?: { branch?: string; region?: string }) {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("cleaning_tasks")
@@ -271,7 +271,15 @@ export async function getCleaningTasksList() {
 
   if (error) throw new Error(error.message);
 
-  const tasks = (data ?? []) as CleaningTask[];
+  const branch = filter?.branch;
+  const regionBranches = !branch && filter?.region ? branchesInRegion(filter.region) : [];
+  const allowedBranches = branch ? [branch] : regionBranches;
+
+  let tasks = (data ?? []) as CleaningTask[];
+  if (allowedBranches.length > 0) {
+    tasks = tasks.filter((t) => t.room && allowedBranches.includes(t.room.branch));
+  }
+
   const withPriority = tasks
     .filter((t) => t.room)
     .map((task) => ({ task, priority: calcRoomPriority(task.room!, task) }));
@@ -301,7 +309,7 @@ export async function getCleaningTaskById(id: string) {
 
 const URGENCY_RANK: Record<string, number> = { urgent: 0, normal: 1, low: 2 };
 
-export async function getIssuesList() {
+export async function getIssuesList(filter?: { branch?: string; region?: string }) {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("issues")
@@ -311,7 +319,16 @@ export async function getIssuesList() {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  const issues = (data ?? []) as Issue[];
+
+  const branch = filter?.branch;
+  const regionBranches = !branch && filter?.region ? branchesInRegion(filter.region) : [];
+  const allowedBranches = branch ? [branch] : regionBranches;
+
+  let issues = (data ?? []) as Issue[];
+  if (allowedBranches.length > 0) {
+    issues = issues.filter((i) => i.room && allowedBranches.includes(i.room.branch));
+  }
+
   return issues.sort((a, b) => URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency]);
 }
 
