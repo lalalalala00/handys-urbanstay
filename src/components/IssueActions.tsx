@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { StatusChangeButtons } from "@/components/StatusChangeButtons";
 import { ISSUE_CATEGORY_LABEL, ISSUE_STATUS_LABEL, ISSUE_URGENCY_LABEL } from "@/lib/labels";
 import type { IssueCategory, IssueStatus, IssueUrgency, Staff, StaffRole } from "@/lib/types";
 
@@ -124,24 +125,13 @@ export function IssueActions({
 
       <div>
         <div className="mb-2 text-sm font-medium">처리 상태 변경</div>
-        {allowedNext.length === 0 ? (
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            더 이상 변경할 수 있는 상태가 없습니다.
-          </p>
-        ) : (
-          <div className="flex flex-wrap gap-2">
-            {allowedNext.map((next) => (
-              <button
-                key={next}
-                disabled={pending}
-                onClick={() => patch({ status: next })}
-                className="rounded border border-black/10 px-3 py-1.5 text-sm hover:bg-black/3 disabled:opacity-40 dark:border-white/10 dark:hover:bg-white/5"
-              >
-                {ISSUE_STATUS_LABEL[status]} → {ISSUE_STATUS_LABEL[next]}
-              </button>
-            ))}
-          </div>
-        )}
+        <StatusChangeButtons
+          current={status}
+          allowedNext={allowedNext}
+          labelMap={ISSUE_STATUS_LABEL}
+          onSelect={(next) => patch({ status: next })}
+          pending={pending}
+        />
       </div>
 
       {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
