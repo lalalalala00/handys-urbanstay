@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCleaningTaskById, getStaffList } from "@/lib/queries";
 import { CleaningTaskDetail } from "@/components/CleaningTaskDetail";
+import { Modal } from "@/components/Modal";
 
 export const dynamic = "force-dynamic";
 
-export default async function CleaningTaskDetailPage({
+export default async function CleaningTaskModal({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -24,11 +24,8 @@ export default async function CleaningTaskDetailPage({
   const cleaners = staffList.filter((s) => s.role === "cleaner");
 
   return (
-    <div className="flex flex-col gap-6">
-      <Link href="/cleaning" className="text-xs text-gray-500 hover:underline">
-        ← 청소 작업 목록
-      </Link>
+    <Modal>
       <CleaningTaskDetail task={task} room={task.room} cleaners={cleaners} />
-    </div>
+    </Modal>
   );
 }
