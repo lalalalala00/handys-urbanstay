@@ -75,6 +75,12 @@ export default async function DashboardPage({
   searchParams: Promise<{ branch?: string; region?: string }>;
 }) {
   const { branch, region } = await searchParams;
+  const filterQuery = new URLSearchParams();
+  if (branch) filterQuery.set("branch", branch);
+  if (region) filterQuery.set("region", region);
+  const filterQueryString = filterQuery.toString();
+  const withFilter = (href: string) =>
+    filterQueryString ? `${href}?${filterQueryString}` : href;
   const {
     summary,
     priorityRooms,
@@ -95,7 +101,11 @@ export default async function DashboardPage({
       .filter((issue) => issue.urgency === "urgent")
       .map((issue) => issue.room?.id),
   );
-  const issueRoomIds = new Set(openIssues.map((issue) => issue.room?.id));
+  const issueByRoomId = new Map(
+    openIssues
+      .filter((issue) => issue.room?.id)
+      .map((issue) => [issue.room!.id, issue]),
+  );
 
   const urgentRoomCards: UrgentCard[] = priorityRooms
     .filter(
@@ -125,7 +135,7 @@ export default async function DashboardPage({
         : "체크인 예정 없음",
       actionLabel:
         !task || task.status === "unassigned" ? "배정하기" : "확인하기",
-      href: task ? `/cleaning/${task.id}` : "/cleaning",
+      href: task ? `/cleaning/${task.id}` : withFilter("/cleaning"),
     }));
 
   const urgentIssueCards: UrgentCard[] = openIssues
@@ -176,7 +186,7 @@ export default async function DashboardPage({
             value={normalRooms}
             label="정상 운영"
             detail={`전체 객실 중 ${totalRooms > 0 ? Math.round((normalRooms / totalRooms) * 100) : 0}%`}
-            href="/cleaning"
+            href={withFilter("/cleaning")}
           />
           <StatCard
             icon={IssueIcon}
@@ -184,7 +194,7 @@ export default async function DashboardPage({
             value={roomStatusDistribution.urgent}
             label="즉시 처리"
             detail="지연/문제 발생"
-            href="/issues"
+            href={withFilter("/issues")}
           />
           <StatCard
             icon={CleaningIcon}
@@ -192,7 +202,7 @@ export default async function DashboardPage({
             value={roomStatusDistribution.inspection}
             label="검수 대기"
             detail="청소 완료 후 검수"
-            href="/cleaning"
+            href={withFilter("/cleaning")}
           />
           <StatCard
             icon={CrewIcon}
@@ -200,7 +210,7 @@ export default async function DashboardPage({
             value={summary.unassigned}
             label="미배정"
             detail="크루 배정 필요"
-            href="/cleaning"
+            href={withFilter("/cleaning")}
           />
           <StatCard
             icon={MessageIcon}
@@ -208,7 +218,7 @@ export default async function DashboardPage({
             value={openIssues.filter((i) => i.reporter_type === "guest").length}
             label="게스트 문의"
             detail="게스트 신고 접수"
-            href="/issues"
+            href={withFilter("/issues")}
           />
         </section>
 
@@ -336,74 +346,103 @@ export default async function DashboardPage({
                 </tr>
               </thead>
               <tbody>
-                {priorityRooms.map(({ room, task, priority }) => (
-                  <tr key={room.id} className="border-t border-card-border">
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={`/rooms/${room.id}`}
-                        className="font-medium hover:text-primary hover:underline"
-                      >
-                        {room.branch} {room.room_number}호
-                      </Link>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <div className="flex flex-wrap gap-1">
-                        {task && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-foreground/60 dark:bg-white/10">
-                            <CleaningIcon className="h-3 w-3" />
-                            청소
-                          </span>
+                {priorityRooms.map(({ room, task, priority }) => {
+                  const roomIssue = issueByRoomId.get(room.id);
+                  return (
+                    <tr key={room.id} className="border-t border-card-border">
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <Link
+                          href={`/rooms/${room.id}`}
+                          className="font-medium hover:text-primary hover:underline"
+                        >
+                          {room.branch} {room.room_number}호
+                        </Link>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <div className="flex flex-nowrap gap-1">
+                          {task && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-foreground/60 dark:bg-white/10">
+                              <CleaningIcon className="h-3 w-3" />
+                              청소
+                            </span>
+                          )}
+                          {roomIssue && (
+                            <Link
+                              href={`/issues/${roomIssue.id}`}
+                              className="inline-flex items-center gap-1 rounded-full bg-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-danger-text hover:underline"
+                            >
+                              <IssueIcon className="h-3 w-3" />
+                              이슈
+                            </Link>
+                          )}
+                          {!task && !roomIssue && (
+                            <span className="text-xs text-subtext">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <RoomStatusBadge status={room.status} />
+                      </td>
+                      <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
+                        {task ? CLEANING_STATUS_LABEL[task.status] : "-"}
+                      </td>
+                      <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
+                        {room.next_checkin_at
+                          ? formatTime(new Date(room.next_checkin_at))
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                            priority.riskLevel === "urgent"
+                              ? "bg-danger-bg text-danger-text"
+                              : priority.riskLevel === "warning"
+                                ? "bg-warning-bg text-warning-text"
+                                : "bg-success-bg text-success-text"
+                          }`}
+                        >
+                          {formatBuffer(priority.bufferMinutes)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
+                        {task?.assignee?.name ?? "미배정"}
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        {task && roomIssue ? (
+                          <Link
+                            href={`/rooms/${room.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            상세보기
+                          </Link>
+                        ) : task ? (
+                          <Link
+                            href={`/cleaning/${task.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {task.status === "unassigned"
+                              ? "배정하기"
+                              : "상세보기"}
+                          </Link>
+                        ) : roomIssue ? (
+                          <Link
+                            href={`/issues/${roomIssue.id}`}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            이슈 확인하기
+                          </Link>
+                        ) : (
+                          <Link
+                            href={withFilter("/cleaning")}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            배정하기
+                          </Link>
                         )}
-                        {issueRoomIds.has(room.id) && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-danger-text">
-                            <IssueIcon className="h-3 w-3" />
-                            이슈
-                          </span>
-                        )}
-                        {!task && !issueRoomIds.has(room.id) && (
-                          <span className="text-xs text-subtext">-</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <RoomStatusBadge status={room.status} />
-                    </td>
-                    <td className="px-4 py-2.5 text-subtext">
-                      {task ? CLEANING_STATUS_LABEL[task.status] : "-"}
-                    </td>
-                    <td className="px-4 py-2.5 text-subtext">
-                      {room.next_checkin_at
-                        ? formatTime(new Date(room.next_checkin_at))
-                        : "-"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          priority.riskLevel === "urgent"
-                            ? "bg-danger-bg text-danger-text"
-                            : priority.riskLevel === "warning"
-                              ? "bg-warning-bg text-warning-text"
-                              : "bg-success-bg text-success-text"
-                        }`}
-                      >
-                        {formatBuffer(priority.bufferMinutes)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-subtext">
-                      {task?.assignee?.name ?? "미배정"}
-                    </td>
-                    <td className="px-4 py-2.5">
-                      <Link
-                        href={task ? `/cleaning/${task.id}` : "/cleaning"}
-                        className="font-medium text-primary hover:underline"
-                      >
-                        {!task || task.status === "unassigned"
-                          ? "배정하기"
-                          : "상세보기"}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {priorityRooms.length === 0 && (
                   <tr>
                     <td
@@ -417,13 +456,22 @@ export default async function DashboardPage({
               </tbody>
             </table>
           </div>
-          <Link
-            href="/cleaning"
-            className="mt-2 flex items-center justify-end gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
-          >
-            청소 작업 전체 보기
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
+          <div className="mt-2 flex items-center justify-end gap-4">
+            <Link
+              href={withFilter("/cleaning")}
+              className="flex items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
+            >
+              청소 작업 전체 보기
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+            <Link
+              href={withFilter("/issues")}
+              className="flex items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
+            >
+              이슈 전체 보기
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </section>
 
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -434,7 +482,7 @@ export default async function DashboardPage({
                 <span className="text-subtext">({openIssues.length})</span>
               </h2>
               <Link
-                href="/issues"
+                href={withFilter("/issues")}
                 className="text-xs font-medium text-primary hover:underline"
               >
                 모든 이슈 보기
@@ -534,7 +582,7 @@ export default async function DashboardPage({
             )}
           </ul>
           <Link
-            href="/cleaning"
+            href={withFilter("/cleaning")}
             className="mt-3 flex items-center justify-end gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
           >
             청소 작업 보기
@@ -604,7 +652,7 @@ export default async function DashboardPage({
             </p>
           )}
           <Link
-            href="/cleaning"
+            href={withFilter("/cleaning")}
             className="mt-3 block rounded-lg bg-primary py-1.5 text-center text-xs font-medium text-white transition-colors hover:bg-primary-hover"
           >
             크루 추가 배정하기
