@@ -53,14 +53,14 @@ export function CleaningTaskActions({
         </div>
       ) : (
         <div>
-          <div className="mb-2 text-sm font-medium">담당자 재배정</div>
+          <div className="mb-2 text-sm font-medium">크루 재배정</div>
           <div className="flex flex-wrap items-center gap-2">
             <select
               className="rounded border border-black/10 bg-transparent px-3 py-1.5 text-sm dark:border-white/10"
               value={selected}
               onChange={(e) => setSelected(e.target.value)}
             >
-              <option value="">담당자 선택</option>
+              <option value="">크루 선택</option>
               {cleaners.map((c) => (
                 <option key={c.id} value={c.id}>
                   {c.name}

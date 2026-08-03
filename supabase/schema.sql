@@ -9,6 +9,10 @@ create table staff (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   role text not null check (role in ('cleaner', 'facility', 'manager')),
+  -- The branch this staff member is the default point of contact for
+  -- (mainly meaningful for managers). Free-text, matching rooms.branch --
+  -- see the region/branch comment in rooms below.
+  branch text,
   created_at timestamptz not null default now()
 );
 

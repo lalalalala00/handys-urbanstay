@@ -457,7 +457,7 @@ export async function getStaffList() {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("staff")
-    .select("id, name, role")
+    .select("id, name, role, branch")
     .order("name");
   if (error) throw new Error(error.message);
   return data ?? [];

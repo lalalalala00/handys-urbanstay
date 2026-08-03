@@ -40,6 +40,7 @@ export interface Staff {
   id: string;
   name: string;
   role: StaffRole;
+  branch: string | null;
 }
 
 export interface Room {

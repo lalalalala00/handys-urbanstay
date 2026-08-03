@@ -10,12 +10,13 @@
 -- fields (no real PG or door-lock vendor integration -- out of MVP scope,
 -- see README "제외" section).
 
-insert into staff (name, role) values
-  ('김민준', 'cleaner'),
-  ('이서연', 'cleaner'),
-  ('박도윤', 'cleaner'),
-  ('최지호', 'facility'),
-  ('정하은', 'manager');
+insert into staff (name, role, branch) values
+  ('김민준', 'cleaner', null),
+  ('이서연', 'cleaner', null),
+  ('박도윤', 'cleaner', null),
+  ('최지호', 'facility', null),
+  ('정하은', 'manager', '노블리안 강남'),
+  ('이지훈', 'manager', '강남 스퀘어 스테이');
 
 insert into rooms (
   branch, room_number, status, checkout_at, next_checkin_at,
@@ -52,11 +53,14 @@ values
 -- Additional demo data: more branches/staff, and more variety in
 -- room status / task status / issue category+urgency+reporter combinations.
 
-insert into staff (name, role) values
-  ('한지민', 'cleaner'),
-  ('오세훈', 'cleaner'),
-  ('강수진', 'facility'),
-  ('배영호', 'manager');
+insert into staff (name, role, branch) values
+  ('한지민', 'cleaner', null),
+  ('오세훈', 'cleaner', null),
+  ('강수진', 'facility', null),
+  ('배영호', 'manager', '해운대 오션하우스'),
+  ('윤지호', 'manager', '홍대 하이브'),
+  ('서예은', 'manager', '마포 브릭하우스'),
+  ('최민아', 'manager', '선셋베이 해운대');
 
 insert into rooms (
   branch, room_number, status, checkout_at, next_checkin_at,
