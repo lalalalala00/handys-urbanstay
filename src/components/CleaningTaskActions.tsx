@@ -12,12 +12,14 @@ export function CleaningTaskActions({
   assigneeId,
   cleaners,
   allowedNext,
+  checkinMinutes,
 }: {
   taskId: string;
   status: CleaningTaskStatus;
   assigneeId: string | null;
   cleaners: Staff[];
   allowedNext: CleaningTaskStatus[];
+  checkinMinutes: number | null;
 }) {
   const router = useRouter();
   const [selected, setSelected] = useState(assigneeId ?? "");
@@ -46,7 +48,7 @@ export function CleaningTaskActions({
       {status === "unassigned" ? (
         <div>
           <div className="mb-2 text-sm font-medium">크루 배정</div>
-          <AvailableCrewList taskId={taskId} />
+          <AvailableCrewList taskId={taskId} checkinMinutes={checkinMinutes} />
         </div>
       ) : (
         <div>

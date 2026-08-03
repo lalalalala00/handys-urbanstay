@@ -1,7 +1,7 @@
 import { CleaningStatusBadge, RiskBadge, RoomStatusBadge } from "@/components/StatusBadges";
 import { CleaningProgressTimeline } from "@/components/CleaningProgressTimeline";
 import { CleaningTaskActions } from "@/components/CleaningTaskActions";
-import { formatBuffer, formatDateTime } from "@/lib/format";
+import { formatBuffer, formatDateTime, minutesUntil } from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";
 import { CLEANING_TASK_NEXT } from "@/lib/transitions";
 import type { CleaningTask, Room, Staff } from "@/lib/types";
@@ -16,6 +16,7 @@ export function CleaningTaskDetail({
   cleaners: Staff[];
 }) {
   const priority = calcRoomPriority(room, task);
+  const checkinMinutes = minutesUntil(room.next_checkin_at);
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,6 +53,7 @@ export function CleaningTaskDetail({
         assigneeId={task.assignee_id}
         cleaners={cleaners}
         allowedNext={CLEANING_TASK_NEXT[task.status]}
+        checkinMinutes={checkinMinutes}
       />
     </div>
   );

@@ -4,6 +4,7 @@ import type {
   IssueStatus,
   IssueUrgency,
   RoomStatus,
+  StaffRole,
 } from "./types";
 
 export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
@@ -46,4 +47,10 @@ export const ISSUE_URGENCY_LABEL: Record<IssueUrgency, string> = {
   urgent: "긴급",
   normal: "보통",
   low: "낮음",
+};
+
+export const STAFF_ROLE_LABEL: Record<StaffRole, string> = {
+  cleaner: "청소",
+  facility: "시설",
+  manager: "매니저",
 };

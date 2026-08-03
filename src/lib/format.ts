@@ -23,3 +23,17 @@ export function formatBuffer(minutes: number | null): string {
   if (minutes < 0) return `${Math.abs(minutes)}분 지연`;
   return `여유 ${minutes}분`;
 }
+
+export function minutesUntil(iso: string | null): number | null {
+  if (!iso) return null;
+  return Math.round((new Date(iso).getTime() - Date.now()) / 60000);
+}
+
+export function formatDuration(minutes: number): string {
+  const abs = Math.round(Math.abs(minutes));
+  const hours = Math.floor(abs / 60);
+  const mins = abs % 60;
+  if (hours === 0) return `${mins}분`;
+  if (mins === 0) return `${hours}시간`;
+  return `${hours}시간 ${mins}분`;
+}
