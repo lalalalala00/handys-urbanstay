@@ -2,6 +2,7 @@ import { getSupabaseServerClient } from "./supabase-server";
 import { calcRoomPriority, roomSortKey } from "./priority";
 import { branchesInRegion } from "./regions";
 import { isToday } from "./format";
+import { ACTIVITY_ACTOR_ROLE_LABEL, REPORTER_TYPE_LABEL } from "./labels";
 import type { CleaningTask, Issue, Room, Staff } from "./types";
 
 const CLEANING_EVENT_LABEL: Record<CleaningTask["status"], string> = {
@@ -325,10 +326,21 @@ export async function getIssueById(id: string) {
   return data as Issue;
 }
 
+export type RoomActivityItem = {
+  id: string;
+  time: Date;
+  actorName: string | null;
+  actorRole: string;
+  action: string;
+  detail: string | null;
+  kind: "cleaning" | "issue";
+  done: boolean;
+};
+
 export async function getRoomDetail(id: string) {
   const supabase = getSupabaseServerClient();
 
-  const [roomRes, taskRes, issuesRes] = await Promise.all([
+  const [roomRes, taskRes, allTasksRes, issuesRes, allIssuesRes] = await Promise.all([
     supabase.from("rooms").select("*").eq("id", id).single(),
     supabase
       .from("cleaning_tasks")
@@ -338,22 +350,78 @@ export async function getRoomDetail(id: string) {
       .limit(1)
       .maybeSingle(),
     supabase
+      .from("cleaning_tasks")
+      .select("*, assignee:staff(id, name, role)")
+      .eq("room_id", id)
+      .order("created_at", { ascending: false }),
+    supabase
       .from("issues")
       .select("*, assignee:staff(id, name, role)")
       .eq("room_id", id)
       .neq("status", "done")
       .order("urgency", { ascending: true })
       .order("created_at", { ascending: true }),
+    supabase
+      .from("issues")
+      .select("*, assignee:staff(id, name, role)")
+      .eq("room_id", id)
+      .order("created_at", { ascending: false }),
   ]);
 
-  if (roomRes.error) throw new Error(roomRes.error.message);
-  if (taskRes.error) throw new Error(taskRes.error.message);
-  if (issuesRes.error) throw new Error(issuesRes.error.message);
+  const firstError =
+    roomRes.error || taskRes.error || allTasksRes.error || issuesRes.error || allIssuesRes.error;
+  if (firstError) throw new Error(firstError.message);
+
+  const room = roomRes.data as Room;
+  const task = (taskRes.data as CleaningTask | null) ?? null;
+  const allTasks = (allTasksRes.data ?? []) as CleaningTask[];
+  const issues = (issuesRes.data ?? []) as Issue[];
+  const allIssues = (allIssuesRes.data ?? []) as Issue[];
+
+  const priority = calcRoomPriority(room, task ?? undefined);
+  const operator = issues.find((i) => i.assignee)?.assignee ?? null;
+
+  const activity: RoomActivityItem[] = [
+    ...allTasks.map((t) => {
+      const time =
+        t.status === "done" && t.completed_at
+          ? t.completed_at
+          : t.status === "cleaning" && t.started_at
+            ? t.started_at
+            : t.updated_at;
+      return {
+        id: `task-${t.id}`,
+        time: new Date(time),
+        actorName: t.assignee?.name ?? null,
+        actorRole: t.assignee ? ACTIVITY_ACTOR_ROLE_LABEL[t.assignee.role] : "운영자",
+        action: CLEANING_EVENT_LABEL[t.status],
+        detail: null,
+        kind: "cleaning" as const,
+        done: t.status === "done",
+      };
+    }),
+    ...allIssues.map((i) => ({
+      id: `issue-${i.id}`,
+      time: new Date(i.updated_at),
+      actorName: i.status === "new" ? null : (i.assignee?.name ?? null),
+      actorRole:
+        i.status === "new" || !i.assignee
+          ? REPORTER_TYPE_LABEL[i.reporter_type]
+          : ACTIVITY_ACTOR_ROLE_LABEL[i.assignee.role],
+      action: ISSUE_EVENT_LABEL[i.status],
+      detail: i.description,
+      kind: "issue" as const,
+      done: i.status === "done",
+    })),
+  ].sort((a, b) => b.time.getTime() - a.time.getTime());
 
   return {
-    room: roomRes.data as Room,
-    task: (taskRes.data as CleaningTask | null) ?? null,
-    issues: (issuesRes.data ?? []) as Issue[],
+    room,
+    task,
+    issues,
+    priority,
+    operator,
+    activity,
   };
 }
 

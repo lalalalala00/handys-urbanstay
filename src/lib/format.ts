@@ -8,6 +8,17 @@ export function formatDateTime(iso: string | null): string {
   });
 }
 
+export function formatDateTimeWithDay(iso: string | null): string {
+  if (!iso) return "-";
+  return new Date(iso).toLocaleString("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export function isToday(iso: string | null): boolean {
   if (!iso) return false;
   const d = new Date(iso);

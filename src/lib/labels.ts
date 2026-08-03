@@ -7,6 +7,24 @@ import type {
   StaffRole,
 } from "./types";
 
+export const REPORTER_TYPE_LABEL: Record<
+  "guest" | "cleaner" | "manager" | "facility",
+  string
+> = {
+  guest: "게스트",
+  cleaner: "크루",
+  manager: "운영자",
+  facility: "시설",
+};
+
+// Short actor-role labels for the room activity timeline (distinct wording
+// from STAFF_ROLE_LABEL, which is used for staff-list/assignment UI).
+export const ACTIVITY_ACTOR_ROLE_LABEL: Record<StaffRole, string> = {
+  cleaner: "크루",
+  manager: "운영자",
+  facility: "시설",
+};
+
 export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
   occupied: "투숙중",
   dirty: "청소필요",

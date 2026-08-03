@@ -3,7 +3,13 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-export function Modal({ children }: { children: React.ReactNode }) {
+export function Modal({
+  children,
+  wide = false,
+}: {
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
   const router = useRouter();
 
   useEffect(() => {
@@ -24,7 +30,9 @@ export function Modal({ children }: { children: React.ReactNode }) {
       onClick={() => router.back()}
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-t-2xl border border-black/10 bg-background p-6 shadow-xl sm:rounded-2xl dark:border-white/10"
+        className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-black/10 bg-background p-6 shadow-xl sm:rounded-2xl dark:border-white/10 ${
+          wide ? "max-w-4xl" : "max-w-lg"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
