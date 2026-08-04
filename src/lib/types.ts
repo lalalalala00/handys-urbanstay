@@ -1,11 +1,6 @@
-export type RoomStatus =
-  | "occupied"
-  | "dirty"
-  | "assigned"
-  | "cleaning"
-  | "inspection"
-  | "issue"
-  | "ready";
+export type OccupancyStatus = "vacant" | "occupied";
+
+export type OperationStatus = "ready" | "blocked";
 
 export type CleaningTaskStatus =
   | "unassigned"
@@ -47,7 +42,9 @@ export interface Room {
   id: string;
   branch: string;
   room_number: string;
-  status: RoomStatus;
+  occupancy_status: OccupancyStatus;
+  operation_status: OperationStatus;
+  operation_note: string | null;
   checkout_at: string | null;
   next_checkin_at: string | null;
   guest_name: string | null;

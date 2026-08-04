@@ -1,4 +1,4 @@
-import type { CleaningTaskStatus, IssueStatus, RoomStatus } from "./types";
+import type { CleaningTaskStatus, IssueStatus } from "./types";
 
 // The canonical step order for each status, used by ProgressTimeline and to
 // tell forward (future) transitions apart from backward (past) ones in StatusChangeButtons.
@@ -27,16 +27,6 @@ export const CLEANING_TASK_NEXT: Record<CleaningTaskStatus, CleaningTaskStatus[]
   cleaning: ["inspection"],
   inspection: ["done", "cleaning"],
   done: [],
-};
-
-// A cleaning task's status is the source of truth for its room's status,
-// as long as the room isn't in the separate `issue` state.
-export const ROOM_STATUS_FOR_CLEANING_STATUS: Record<CleaningTaskStatus, RoomStatus> = {
-  unassigned: "dirty",
-  assigned: "assigned",
-  cleaning: "cleaning",
-  inspection: "inspection",
-  done: "ready",
 };
 
 export const ISSUE_STATUS_NEXT: Record<IssueStatus, IssueStatus[]> = {

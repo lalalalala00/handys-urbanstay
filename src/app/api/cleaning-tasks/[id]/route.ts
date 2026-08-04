@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
 import { getCleaningTaskById } from "@/lib/queries";
-import { CLEANING_TASK_NEXT, ROOM_STATUS_FOR_CLEANING_STATUS, isValidCleaningTransition } from "@/lib/transitions";
+import { CLEANING_TASK_NEXT, isValidCleaningTransition } from "@/lib/transitions";
 import type { CleaningTaskStatus } from "@/lib/types";
 
 export async function GET(
@@ -90,24 +90,6 @@ export async function PATCH(
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
-  }
-
-  // Cleaning status drives room status, unless the room currently has an
-  // unrelated open issue overriding it.
-  const { data: room } = await supabase
-    .from("rooms")
-    .select("status")
-    .eq("id", current.room_id)
-    .single();
-
-  if (room && room.status !== "issue") {
-    await supabase
-      .from("rooms")
-      .update({
-        status: ROOM_STATUS_FOR_CLEANING_STATUS[nextStatus],
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", current.room_id);
   }
 
   return NextResponse.json({ task: updatedTask });

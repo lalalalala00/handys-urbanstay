@@ -17,6 +17,7 @@ import { CLEANING_STATUS_LABEL } from "@/lib/labels";
 import { formatBuffer, formatDateTime, minutesUntil } from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";
 import { CLEANING_TASK_NEXT, CLEANING_STEPS } from "@/lib/transitions";
+import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";
 import type { CleaningTask, Room, Staff } from "@/lib/types";
 const AUTO_HANDLED_TRANSITIONS: Record<string, string[]> = {
   unassigned: ["assigned"],
@@ -52,6 +53,7 @@ export function CleaningTaskDetail({
     <div className="flex flex-col gap-6">
       <RoomModalHeader
         room={room}
+        task={task}
         operatorName={managerName}
         crewName={task.assignee?.name ?? null}
         titleSuffix="청소"
@@ -77,7 +79,7 @@ export function CleaningTaskDetail({
             </div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-5 sm:grid-cols-4">
               <Field label="객실 상태">
-                <RoomStatusBadge status={room.status} />
+                <RoomStatusBadge status={getRoomDisplayStatus(room, task)} />
               </Field>
               <Field label="여유 시간">
                 <RiskBadge

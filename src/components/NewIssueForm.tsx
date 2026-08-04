@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ISSUE_CATEGORY_LABEL, ISSUE_URGENCY_LABEL, ROOM_STATUS_LABEL } from "@/lib/labels";
-import type { IssueCategory, IssueUrgency, RoomStatus } from "@/lib/types";
+import { ISSUE_CATEGORY_LABEL, ISSUE_URGENCY_LABEL } from "@/lib/labels";
+import type { IssueCategory, IssueUrgency, OccupancyStatus, OperationStatus } from "@/lib/types";
 
 const CATEGORIES = Object.keys(ISSUE_CATEGORY_LABEL) as IssueCategory[];
 const URGENCIES = Object.keys(ISSUE_URGENCY_LABEL) as IssueUrgency[];
@@ -18,7 +18,14 @@ interface RoomOption {
   id: string;
   branch: string;
   room_number: string;
-  status: RoomStatus;
+  occupancy_status: OccupancyStatus;
+  operation_status: OperationStatus;
+}
+
+function roomOptionLabel(room: RoomOption): string {
+  if (room.operation_status === "blocked") return "판매중지";
+  if (room.occupancy_status === "occupied") return "투숙중";
+  return "빈 객실";
 }
 
 interface Suggestion {
@@ -51,7 +58,7 @@ export function NewIssueForm({ rooms }: { rooms: RoomOption[] }) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         description,
-        roomStatus: selectedRoom ? ROOM_STATUS_LABEL[selectedRoom.status] : undefined,
+        roomStatus: selectedRoom ? roomOptionLabel(selectedRoom) : undefined,
       }),
     });
     const json = await res.json();
@@ -111,7 +118,7 @@ export function NewIssueForm({ rooms }: { rooms: RoomOption[] }) {
           <option value="">객실 선택</option>
           {rooms.map((r) => (
             <option key={r.id} value={r.id}>
-              {r.branch} {r.room_number}호 ({ROOM_STATUS_LABEL[r.status]})
+              {r.branch} {r.room_number}호 ({roomOptionLabel(r)})
             </option>
           ))}
         </select>

@@ -20,8 +20,11 @@ create table rooms (
   id uuid primary key default gen_random_uuid(),
   branch text not null,
   room_number text not null,
-  status text not null default 'ready'
-    check (status in ('occupied', 'dirty', 'assigned', 'cleaning', 'inspection', 'issue', 'ready')),
+  occupancy_status text not null default 'vacant'
+    check (occupancy_status in ('vacant', 'occupied')),
+  operation_status text not null default 'ready'
+    check (operation_status in ('ready', 'blocked')),
+  operation_note text,
   checkout_at timestamptz,
   next_checkin_at timestamptz,
   guest_name text,

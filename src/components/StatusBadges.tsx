@@ -3,24 +3,20 @@ import {
   CLEANING_STATUS_LABEL,
   ISSUE_STATUS_LABEL,
   ISSUE_URGENCY_LABEL,
-  ROOM_STATUS_LABEL,
+  ROOM_DISPLAY_STATUS_LABEL,
 } from "@/lib/labels";
-import type {
-  CleaningTaskStatus,
-  IssueStatus,
-  IssueUrgency,
-  RoomStatus,
-} from "@/lib/types";
+import type { CleaningTaskStatus, IssueStatus, IssueUrgency } from "@/lib/types";
+import type { RoomDisplayStatus } from "@/lib/roomDisplayStatus";
 import type { RiskLevel } from "@/lib/priority";
 
-const ROOM_TONE: Record<RoomStatus, Tone> = {
+const ROOM_TONE: Record<RoomDisplayStatus, Tone> = {
   occupied: "neutral",
-  dirty: "danger",
-  assigned: "info",
   cleaning: "info",
   inspection: "warning",
-  issue: "danger",
+  dirty: "danger",
+  checkin_due: "info",
   ready: "success",
+  blocked: "danger",
 };
 
 export const CLEANING_TONE: Record<CleaningTaskStatus, Tone> = {
@@ -53,8 +49,8 @@ const RISK_TONE: Record<RiskLevel, Tone> = {
   none: "neutral",
 };
 
-export function RoomStatusBadge({ status }: { status: RoomStatus }) {
-  return <Badge tone={ROOM_TONE[status]}>{ROOM_STATUS_LABEL[status]}</Badge>;
+export function RoomStatusBadge({ status }: { status: RoomDisplayStatus }) {
+  return <Badge tone={ROOM_TONE[status]}>{ROOM_DISPLAY_STATUS_LABEL[status]}</Badge>;
 }
 
 export function CleaningStatusBadge({ status }: { status: CleaningTaskStatus }) {

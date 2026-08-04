@@ -74,14 +74,5 @@ export async function PATCH(
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
 
-  // Resolving an issue hands the room back to the cleaning flow at the
-  // inspection step rather than straight to Ready.
-  if (nextStatus === "done") {
-    await supabase
-      .from("rooms")
-      .update({ status: "inspection", updated_at: new Date().toISOString() })
-      .eq("id", current.room_id);
-  }
-
   return NextResponse.json({ issue: updatedIssue });
 }

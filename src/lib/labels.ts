@@ -3,9 +3,9 @@ import type {
   IssueCategory,
   IssueStatus,
   IssueUrgency,
-  RoomStatus,
   StaffRole,
 } from "./types";
+import type { RoomDisplayStatus } from "./roomDisplayStatus";
 
 export const REPORTER_TYPE_LABEL: Record<
   "guest" | "cleaner" | "manager" | "facility",
@@ -25,14 +25,14 @@ export const ACTIVITY_ACTOR_ROLE_LABEL: Record<StaffRole, string> = {
   facility: "시설",
 };
 
-export const ROOM_STATUS_LABEL: Record<RoomStatus, string> = {
+export const ROOM_DISPLAY_STATUS_LABEL: Record<RoomDisplayStatus, string> = {
   occupied: "투숙중",
-  dirty: "청소필요",
-  assigned: "배정완료",
   cleaning: "청소중",
   inspection: "검수대기",
-  issue: "이상신고",
-  ready: "판매가능",
+  dirty: "청소필요",
+  checkin_due: "입실예정",
+  ready: "입실준비완료",
+  blocked: "판매중지",
 };
 
 export const CLEANING_STATUS_LABEL: Record<CleaningTaskStatus, string> = {

@@ -3,6 +3,7 @@ import { calcRoomPriority, roomSortKey } from "./priority";
 import { branchesInRegion } from "./regions";
 import { isToday } from "./format";
 import { ACTIVITY_ACTOR_ROLE_LABEL, REPORTER_TYPE_LABEL } from "./labels";
+import { getRoomDisplayStatus, type RoomDisplayStatus } from "./roomDisplayStatus";
 import type { CleaningTask, Issue, Room, Staff } from "./types";
 
 const CLEANING_EVENT_LABEL: Record<CleaningTask["status"], string> = {
@@ -213,13 +214,13 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
 
   const activity = activityHistory.slice(0, 5);
 
-  const STATUS_BUCKET: Record<Room["status"], "normal" | "urgent" | "inspection" | "assigned"> = {
+  const STATUS_BUCKET: Record<RoomDisplayStatus, "normal" | "urgent" | "inspection" | "assigned"> = {
     ready: "normal",
+    checkin_due: "normal",
     occupied: "normal",
-    issue: "urgent",
+    blocked: "urgent",
     dirty: "urgent",
     inspection: "inspection",
-    assigned: "assigned",
     cleaning: "assigned",
   };
   const roomStatusDistribution = {
@@ -229,7 +230,8 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
     assigned: 0,
   };
   for (const room of rooms) {
-    roomStatusDistribution[STATUS_BUCKET[room.status]] += 1;
+    const displayStatus = getRoomDisplayStatus(room, latestTaskByRoom.get(room.id));
+    roomStatusDistribution[STATUS_BUCKET[displayStatus]] += 1;
   }
 
   const checkinHourCounts = new Map<number, number>();
@@ -469,7 +471,7 @@ export async function getRoomsForSelect() {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("rooms")
-    .select("id, branch, room_number, status")
+    .select("id, branch, room_number, occupancy_status, operation_status")
     .order("branch")
     .order("room_number");
   if (error) throw new Error(error.message);

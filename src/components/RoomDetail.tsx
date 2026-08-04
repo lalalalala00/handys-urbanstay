@@ -45,7 +45,7 @@ export function RoomDetail({
   activity: RoomActivityItem[];
   compact?: boolean;
 }) {
-  const checkedIn = room.status === "occupied";
+  const checkedIn = room.occupancy_status === "occupied";
   const hasGuest = Boolean(room.guest_name);
   const isCombinedView = compact;
 
@@ -65,6 +65,7 @@ export function RoomDetail({
     <div className="flex flex-col gap-5">
       <RoomModalHeader
         room={room}
+        task={task}
         operatorName={operator?.name ?? null}
         crewName={task?.assignee?.name ?? null}
       />

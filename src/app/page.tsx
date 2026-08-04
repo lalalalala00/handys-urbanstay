@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/queries";
 import { RoomStatusBadge, IssueStatusBadge } from "@/components/StatusBadges";
+import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";
 import { formatBuffer, formatDateHeader, formatTime } from "@/lib/format";
 import { CLEANING_STATUS_LABEL } from "@/lib/labels";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -384,7 +385,7 @@ export default async function DashboardPage({
                         </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <RoomStatusBadge status={room.status} />
+                        <RoomStatusBadge status={getRoomDisplayStatus(room, task)} />
                       </td>
                       <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
                         {task ? CLEANING_STATUS_LABEL[task.status] : "-"}

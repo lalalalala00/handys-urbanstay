@@ -48,12 +48,5 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  // A newly reported issue always surfaces on the room, regardless of
-  // where it was in the cleaning flow (see README room-state diagram).
-  await supabase
-    .from("rooms")
-    .update({ status: "issue", updated_at: new Date().toISOString() })
-    .eq("id", body.roomId);
-
   return NextResponse.json({ issue }, { status: 201 });
 }
