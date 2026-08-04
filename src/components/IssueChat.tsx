@@ -49,7 +49,7 @@ export function IssueChat({ issue }: { issue: Issue }) {
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4 rounded-lg border border-black/10 p-4 lg:grid-cols-[3fr_2fr] dark:border-white/10">
+    <div className="grid grid-cols-1 bg-white/50 gap-4 rounded-lg border border-black/10 p-4 lg:grid-cols-[3fr_2fr] dark:border-white/10">
       <div>
         <div className="mb-3 flex items-center gap-1.5 text-sm font-medium">
           <MessageIcon className="h-4 w-4 text-primary" />
@@ -64,7 +64,9 @@ export function IssueChat({ issue }: { issue: Issue }) {
               }`}
             >
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                <span className="font-medium text-foreground">{m.senderLabel}</span>
+                <span className="font-medium text-foreground">
+                  {m.senderLabel}
+                </span>
                 <span>{m.time}</span>
               </div>
               <div

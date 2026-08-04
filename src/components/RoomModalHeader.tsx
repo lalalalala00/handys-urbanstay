@@ -37,25 +37,34 @@ export function RoomModalHeader({
       </div>
 
       <div className="flex items-center gap-5">
-        <PersonField label="담당 운영자" name={operatorName} sub={room.branch} />
-        <PersonField label="담당 크루" name={crewName} />
+        <PersonField label="담당 운영자" name={operatorName} sub={room.branch} variant="operator" />
+        <PersonField label="담당 크루" name={crewName} variant="crew" />
       </div>
     </div>
   );
 }
 
+const AVATAR_VARIANT_CLASSES = {
+  operator: "bg-sage text-primary-hover",
+  crew: "bg-sand text-brown",
+};
+
 function PersonField({
   label,
   name,
   sub,
+  variant,
 }: {
   label: string;
   name: string | null;
   sub?: string;
+  variant: keyof typeof AVATAR_VARIANT_CLASSES;
 }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sage text-xs font-semibold text-primary-hover">
+      <div
+        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${AVATAR_VARIANT_CLASSES[variant]}`}
+      >
         {name ? name.slice(0, 1) : "-"}
       </div>
       <div className="leading-tight">
