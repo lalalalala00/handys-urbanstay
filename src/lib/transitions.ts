@@ -1,7 +1,7 @@
 import type { CleaningTaskStatus, IssueStatus, RoomStatus } from "./types";
 
 // The canonical step order for each status, used by ProgressTimeline and to
-// tell "the very next step" apart from "skipping ahead" in StatusChangeButtons.
+// tell forward (future) transitions apart from backward (past) ones in StatusChangeButtons.
 export const CLEANING_STEPS: CleaningTaskStatus[] = [
   "unassigned",
   "assigned",

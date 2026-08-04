@@ -134,6 +134,13 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
     const myTasks = tasks.filter(
       (t) => t.assignee_id === member.id && t.status !== "done"
     );
+    const completedCount = tasks.filter(
+      (t) =>
+        t.assignee_id === member.id &&
+        t.status === "done" &&
+        t.completed_at &&
+        isToday(t.completed_at)
+    ).length;
     const cleaningTask = myTasks.find((t) => t.status === "cleaning");
     const inspectionTask = myTasks.find((t) => t.status === "inspection");
     const assignedTask = myTasks.find((t) => t.status === "assigned");
@@ -166,6 +173,7 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
       working,
       progress,
       activeCount: myTasks.length,
+      completedCount,
       branch: activeTask?.room?.branch ?? null,
     };
   });

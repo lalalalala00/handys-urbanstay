@@ -183,3 +183,12 @@ export function ActionIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function CopyIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="8.5" y="8.5" width="12" height="12" rx="2" />
+      <path d="M15.5 8.5V6a2 2 0 0 0-2-2H5.5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2H8" />
+    </svg>
+  );
+}

@@ -42,8 +42,8 @@ export function formatRelative(iso: string | null): string {
 
 export function formatBuffer(minutes: number | null): string {
   if (minutes === null) return "-";
-  if (minutes < 0) return `${Math.abs(minutes)}분 지연`;
-  return `여유 ${minutes}분`;
+  if (minutes < 0) return `${formatDuration(minutes)} 지연`;
+  return `여유 ${formatDuration(minutes)}`;
 }
 
 export function minutesUntil(iso: string | null): number | null {
