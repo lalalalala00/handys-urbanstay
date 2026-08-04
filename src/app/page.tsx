@@ -17,6 +17,7 @@ import {
   MessageIcon,
   RefreshIcon,
 } from "@/components/icons";
+import { CrewStatusCard } from "@/components/crew/CrewStatusCard";
 
 export const dynamic = "force-dynamic";
 
@@ -99,12 +100,12 @@ export default async function DashboardPage({
   const urgentIssueRoomIds = new Set(
     openIssues
       .filter((issue) => issue.urgency === "urgent")
-      .map((issue) => issue.room?.id),
+      .map((issue) => issue.room?.id)
   );
   const issueByRoomId = new Map(
     openIssues
       .filter((issue) => issue.room?.id)
-      .map((issue) => [issue.room!.id, issue]),
+      .map((issue) => [issue.room!.id, issue])
   );
 
   const urgentRoomCards: UrgentCard[] = priorityRooms
@@ -113,7 +114,7 @@ export default async function DashboardPage({
         !urgentIssueRoomIds.has(room.id) &&
         (priority.riskLevel === "urgent" ||
           priority.riskLevel === "warning" ||
-          task?.status === "unassigned"),
+          task?.status === "unassigned")
     )
     .slice(0, 3)
     .map(({ room, task, priority }) => ({
@@ -127,8 +128,8 @@ export default async function DashboardPage({
         priority.riskLevel === "urgent"
           ? ("danger" as const)
           : priority.riskLevel === "warning"
-            ? ("warning" as const)
-            : ("success" as const),
+          ? ("warning" as const)
+          : ("success" as const),
       statusText: task ? CLEANING_STATUS_LABEL[task.status] : "청소 없음",
       subText: room.next_checkin_at
         ? `체크인 ${formatTime(new Date(room.next_checkin_at))}`
@@ -185,7 +186,9 @@ export default async function DashboardPage({
             tone="success"
             value={normalRooms}
             label="정상 운영"
-            detail={`전체 객실 중 ${totalRooms > 0 ? Math.round((normalRooms / totalRooms) * 100) : 0}%`}
+            detail={`전체 객실 중 ${
+              totalRooms > 0 ? Math.round((normalRooms / totalRooms) * 100) : 0
+            }%`}
             href={withFilter("/cleaning")}
           />
           <StatCard
@@ -397,8 +400,8 @@ export default async function DashboardPage({
                             priority.riskLevel === "urgent"
                               ? "bg-danger-bg text-danger-text"
                               : priority.riskLevel === "warning"
-                                ? "bg-warning-bg text-warning-text"
-                                : "bg-success-bg text-success-text"
+                              ? "bg-warning-bg text-warning-text"
+                              : "bg-success-bg text-success-text"
                           }`}
                         >
                           {formatBuffer(priority.bufferMinutes)}
@@ -528,67 +531,7 @@ export default async function DashboardPage({
       </div>
 
       <aside className="hidden w-72 shrink-0 flex-col gap-4 xl:flex">
-        <div className="rounded-xl border border-card-border bg-card p-4">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">오늘의 크루 현황</h2>
-            <span className="text-xs text-subtext">
-              전체 크루 {crew.length}명
-            </span>
-          </div>
-          <ul className="flex flex-col gap-3">
-            {crew.map(({ staff, working, progress, activeCount, branch }) => (
-              <li key={staff.id}>
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sand text-xs font-semibold text-brown">
-                    {staff.name.slice(-2)}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-sm font-medium">
-                        {staff.name}
-                      </span>
-                      <span
-                        className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                          working
-                            ? "bg-info-bg text-info-text"
-                            : "bg-black/5 text-foreground/60 dark:bg-white/10"
-                        }`}
-                      >
-                        {working ? "작업 중" : "대기"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-subtext">
-                      {activeCount > 0
-                        ? `진행 중 ${activeCount}건`
-                        : "배정된 작업 없음"}
-                      {branch ? ` · ${branch}` : ""}
-                    </p>
-                  </div>
-                </div>
-                {progress !== null && (
-                  <div className="mt-1.5 ml-10.5 h-1.5 overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${progress}%` }}
-                    />
-                  </div>
-                )}
-              </li>
-            ))}
-            {crew.length === 0 && (
-              <li className="py-2 text-center text-sm text-subtext">
-                등록된 크루가 없습니다.
-              </li>
-            )}
-          </ul>
-          <Link
-            href={withFilter("/cleaning")}
-            className="mt-3 flex items-center justify-end gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
-          >
-            청소 작업 보기
-            <ArrowRightIcon className="h-3.5 w-3.5" />
-          </Link>
-        </div>
+        <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
 
         <div className="rounded-xl border border-card-border bg-card p-4">
           <div className="mb-3 flex items-center justify-between gap-2">
