@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Sidebar } from "@/components/Sidebar";
 import { Header } from "@/components/Header";
+import { ToastProvider } from "@/components/Toast";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -32,14 +33,16 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex h-full">
-        <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Header />
-          <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6">
-            {children}
-          </main>
-        </div>
-        {modal}
+        <ToastProvider>
+          <Sidebar />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <Header />
+            <main className="min-w-0 flex-1 overflow-y-auto px-6 py-6">
+              {children}
+            </main>
+          </div>
+          {modal}
+        </ToastProvider>
       </body>
     </html>
   );
