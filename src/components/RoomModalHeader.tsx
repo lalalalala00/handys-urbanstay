@@ -62,6 +62,11 @@ export function RoomModalHeader({
             {region.city} &gt; {region.district}
           </div>
         )}
+        {room.operation_status === "blocked" && (
+          <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-danger-bg px-2.5 py-1 text-xs font-medium text-danger-text">
+            판매 중지{room.operation_note ? `: ${room.operation_note}` : ""}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-5">

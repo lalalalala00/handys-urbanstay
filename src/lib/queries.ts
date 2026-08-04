@@ -467,6 +467,111 @@ export async function getRoomDetail(id: string) {
   };
 }
 
+export type RoomOverviewItem = {
+  room: Room;
+  task: CleaningTask | null;
+  displayStatus: RoomDisplayStatus;
+  openIssueCount: number;
+};
+
+export type RoomsOverviewSummary = {
+  occupied: number;
+  checkinDue: number;
+  checkoutDue: number;
+  needsCleaning: number;
+  ready: number;
+  blocked: number;
+};
+
+export async function getRoomsOverview(filter?: { branch?: string; region?: string }) {
+  const supabase = getSupabaseServerClient();
+
+  const branch = filter?.branch;
+  const regionBranches = !branch && filter?.region ? branchesInRegion(filter.region) : [];
+
+  let roomsQuery = supabase.from("rooms").select("*");
+  if (branch) {
+    roomsQuery = roomsQuery.eq("branch", branch);
+  } else if (regionBranches.length > 0) {
+    roomsQuery = roomsQuery.in("branch", regionBranches);
+  }
+
+  const [roomsRes, tasksRes, issuesRes] = await Promise.all([
+    roomsQuery,
+    supabase
+      .from("cleaning_tasks")
+      .select("*, assignee:staff(id, name, role)")
+      .order("created_at", { ascending: false }),
+    supabase.from("issues").select("room_id").neq("status", "done"),
+  ]);
+
+  const firstError = roomsRes.error || tasksRes.error || issuesRes.error;
+  if (firstError) throw new Error(firstError.message);
+
+  const rooms = (roomsRes.data ?? []) as Room[];
+  const roomIds = new Set(rooms.map((r) => r.id));
+  const tasks = ((tasksRes.data ?? []) as CleaningTask[]).filter((t) =>
+    roomIds.has(t.room_id)
+  );
+
+  const latestTaskByRoom = new Map<string, CleaningTask>();
+  for (const task of tasks) {
+    if (!latestTaskByRoom.has(task.room_id)) {
+      latestTaskByRoom.set(task.room_id, task);
+    }
+  }
+
+  const openIssueCountByRoom = new Map<string, number>();
+  for (const row of (issuesRes.data ?? []) as { room_id: string }[]) {
+    if (!roomIds.has(row.room_id)) continue;
+    openIssueCountByRoom.set(row.room_id, (openIssueCountByRoom.get(row.room_id) ?? 0) + 1);
+  }
+
+  const items: RoomOverviewItem[] = rooms
+    .map((room) => {
+      const task = latestTaskByRoom.get(room.id) ?? null;
+      return {
+        room,
+        task,
+        displayStatus: getRoomDisplayStatus(room, task),
+        openIssueCount: openIssueCountByRoom.get(room.id) ?? 0,
+      };
+    })
+    .sort((a, b) => {
+      if (a.room.branch !== b.room.branch) {
+        return a.room.branch.localeCompare(b.room.branch, "ko");
+      }
+      return a.room.room_number.localeCompare(b.room.room_number, "ko", {
+        numeric: true,
+      });
+    });
+
+  const summary: RoomsOverviewSummary = {
+    occupied: 0,
+    checkinDue: 0,
+    checkoutDue: 0,
+    needsCleaning: 0,
+    ready: 0,
+    blocked: 0,
+  };
+  for (const item of items) {
+    if (item.room.occupancy_status === "occupied") summary.occupied += 1;
+    if (item.displayStatus === "checkin_due") summary.checkinDue += 1;
+    if (isToday(item.room.checkout_at)) summary.checkoutDue += 1;
+    if (
+      item.displayStatus === "dirty" ||
+      item.displayStatus === "cleaning" ||
+      item.displayStatus === "inspection"
+    ) {
+      summary.needsCleaning += 1;
+    }
+    if (item.displayStatus === "ready") summary.ready += 1;
+    if (item.displayStatus === "blocked") summary.blocked += 1;
+  }
+
+  return { items, summary };
+}
+
 export async function getRoomsForSelect() {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase

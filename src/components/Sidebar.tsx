@@ -11,11 +11,13 @@ import {
   LocationIcon,
   MessageIcon,
   ReportIcon,
+  RoomIcon,
   SettingsIcon,
 } from "./icons";
 
 const NAV_LINKS = [
   { href: "/", label: "대시보드", icon: DashboardIcon },
+  { href: "/rooms", label: "객실 현황", icon: RoomIcon },
   { href: "/cleaning", label: "청소 작업", icon: CleaningIcon },
   { href: "/issues", label: "객실 이슈", icon: IssueIcon },
 ];

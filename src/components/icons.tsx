@@ -41,6 +41,18 @@ export function IssueIcon({ className }: IconProps) {
   );
 }
 
+export function RoomIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M3.5 20V5.5" />
+      <path d="M3.5 13h17V20" />
+      <path d="M3.5 13V9.5a2 2 0 0 1 2-2H11a2 2 0 0 1 2 2V13" />
+      <circle cx="8" cy="10.2" r="0.9" fill="currentColor" stroke="none" />
+      <path d="M20.5 20v-4.5a2 2 0 0 0-2-2h-3" />
+    </svg>
+  );
+}
+
 export function CheckCircleIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>
