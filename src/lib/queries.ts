@@ -3,7 +3,11 @@ import { calcRoomPriority, roomSortKey } from "./priority";
 import { branchesInRegion } from "./regions";
 import { isToday } from "./format";
 import { ACTIVITY_ACTOR_ROLE_LABEL, REPORTER_TYPE_LABEL } from "./labels";
-import { getRoomDisplayStatus, type RoomDisplayStatus } from "./roomDisplayStatus";
+import {
+  getRoomDisplayStatus,
+  ROOM_STATUS_BUCKET,
+  type RoomDisplayStatus,
+} from "./roomDisplayStatus";
 import type { CleaningTask, Issue, Room, Staff } from "./types";
 
 const CLEANING_EVENT_LABEL: Record<CleaningTask["status"], string> = {
@@ -214,15 +218,6 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
 
   const activity = activityHistory.slice(0, 5);
 
-  const STATUS_BUCKET: Record<RoomDisplayStatus, "normal" | "urgent" | "inspection" | "assigned"> = {
-    ready: "normal",
-    checkin_due: "normal",
-    occupied: "normal",
-    blocked: "urgent",
-    dirty: "urgent",
-    inspection: "inspection",
-    cleaning: "assigned",
-  };
   const roomStatusDistribution = {
     normal: 0,
     urgent: 0,
@@ -231,7 +226,7 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
   };
   for (const room of rooms) {
     const displayStatus = getRoomDisplayStatus(room, latestTaskByRoom.get(room.id));
-    roomStatusDistribution[STATUS_BUCKET[displayStatus]] += 1;
+    roomStatusDistribution[ROOM_STATUS_BUCKET[displayStatus]] += 1;
   }
 
   const checkinHourCounts = new Map<number, number>();

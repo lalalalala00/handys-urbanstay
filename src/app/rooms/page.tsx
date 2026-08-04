@@ -1,18 +1,18 @@
-import Link from "next/link";
 import { getRoomsOverview, type RoomOverviewItem } from "@/lib/queries";
-import { RoomStatusBadge } from "@/components/StatusBadges";
+import { RoomOverviewRow } from "@/components/RoomOverviewRow";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ROOM_DISPLAY_STATUS_LABEL } from "@/lib/labels";
-import { formatDateTime, formatTime, isToday } from "@/lib/format";
+import { addressForBranch } from "@/lib/regions";
+import { isToday } from "@/lib/format";
 import {
   CheckCircleIcon,
+  ChevronDownIcon,
   CleaningIcon,
   ClockIcon,
-  IssueIcon,
   LockIcon,
   RoomIcon,
 } from "@/components/icons";
-import type { RoomDisplayStatus } from "@/lib/roomDisplayStatus";
+import { ROOM_STATUS_BUCKET, type RoomDisplayStatus } from "@/lib/roomDisplayStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -31,13 +31,16 @@ export default async function RoomsOverviewPage({
   const { items, summary } = await getRoomsOverview({ branch, region });
 
   const activeStatus = isRoomDisplayStatus(status) ? status : undefined;
+  const isNormalFilter = status === "normal";
   const checkoutToday = checkout === "today";
 
   const filteredItems = activeStatus
     ? items.filter((item) => item.displayStatus === activeStatus)
-    : checkoutToday
-      ? items.filter((item) => isToday(item.room.checkout_at))
-      : items;
+    : isNormalFilter
+      ? items.filter((item) => ROOM_STATUS_BUCKET[item.displayStatus] === "normal")
+      : checkoutToday
+        ? items.filter((item) => isToday(item.room.checkout_at))
+        : items;
 
   const baseParams = new URLSearchParams();
   if (branch) baseParams.set("branch", branch);
@@ -119,43 +122,33 @@ export default async function RoomsOverviewPage({
 
       <section className="flex flex-col gap-5">
         {groups.map(([branchName, branchItems]) => (
-          <div
+          <details
             key={branchName}
-            className="overflow-hidden rounded-xl border border-card-border bg-card"
+            open
+            className="group overflow-hidden rounded-xl border border-card-border bg-card"
           >
-            <div className="border-b border-card-border px-4 py-3">
-              <h2 className="text-sm font-semibold">{branchName}</h2>
-              <p className="mt-0.5 text-xs text-subtext">{branchItems.length}개 객실</p>
-            </div>
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 border-b border-card-border px-4 py-3">
+              <div>
+                <h2 className="text-sm font-semibold">{branchName}</h2>
+                <p className="mt-0.5 text-xs text-subtext">
+                  {addressForBranch(branchName) ?? `${branchItems.length}개 객실`}
+                </p>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2 text-xs text-subtext">
+                <span>{branchItems.length}개 객실</span>
+                <ChevronDownIcon className="h-4 w-4 transition-transform group-open:rotate-180" />
+              </div>
+            </summary>
 
             <ul>
               {branchItems.map((item) => (
                 <li key={item.room.id} className="border-t border-card-border first:border-t-0">
-                  <Link
-                    href={`/rooms/${item.room.id}`}
-                    className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
-                      <span className="font-medium whitespace-nowrap">
-                        {item.room.room_number}호
-                      </span>
-                      <RoomStatusBadge status={item.displayStatus} />
-                      {item.openIssueCount > 0 && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-danger-text">
-                          <IssueIcon className="h-3 w-3" />
-                          이슈 {item.openIssueCount}
-                        </span>
-                      )}
-                    </div>
-
-                    <span className="truncate text-xs text-subtext">
-                      {roomDetailLine(item)}
-                    </span>
-                  </Link>
+                  <RoomOverviewRow item={item} />
                 </li>
               ))}
             </ul>
-          </div>
+          </details>
         ))}
 
         {groups.length === 0 && (
@@ -163,7 +156,9 @@ export default async function RoomsOverviewPage({
             <p className="text-sm font-medium">
               {activeStatus
                 ? `${ROOM_DISPLAY_STATUS_LABEL[activeStatus]} 상태의 객실이 없습니다.`
-                : "조건에 맞는 객실이 없습니다."}
+                : isNormalFilter
+                  ? "정상 운영 중인 객실이 없습니다."
+                  : "조건에 맞는 객실이 없습니다."}
             </p>
           </div>
         )}
@@ -192,30 +187,4 @@ function groupByBranch(items: RoomOverviewItem[]): [string, RoomOverviewItem[]][
     groups.set(item.room.branch, list);
   }
   return Array.from(groups.entries());
-}
-
-function roomDetailLine(item: RoomOverviewItem): string {
-  const { room, task, displayStatus } = item;
-
-  switch (displayStatus) {
-    case "occupied":
-      return `퇴실 ${formatDateTime(room.checkout_at)}`;
-    case "checkin_due":
-      return room.next_checkin_at
-        ? `입실 ${formatTime(new Date(room.next_checkin_at))} · ${
-            task && task.status !== "done" ? "청소 필요" : "청소 완료"
-          }`
-        : "입실 예정";
-    case "cleaning":
-    case "inspection":
-    case "dirty":
-      return task?.assignee?.name ? `담당 ${task.assignee.name}` : "담당자 미배정";
-    case "blocked":
-      return room.operation_note ?? "판매 중지";
-    case "ready":
-    default:
-      return room.next_checkin_at
-        ? `다음 입실 ${formatDateTime(room.next_checkin_at)}`
-        : "다음 예약 없음";
-  }
 }

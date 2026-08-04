@@ -29,9 +29,11 @@ export default async function IssuesPage({
     branch?: string;
     region?: string;
     status?: string;
+    urgency?: string;
+    reporter?: string;
   }>;
 }) {
-  const { branch, region, status } = await searchParams;
+  const { branch, region, status, urgency, reporter } = await searchParams;
 
   const issues = await getIssuesList({
     branch,
@@ -42,9 +44,24 @@ export default async function IssuesPage({
     ? (status as IssueStatus)
     : undefined;
 
-  const filteredIssues = activeStatus
+  const isUrgentFilter = urgency === "urgent";
+  const isGuestFilter = reporter === "guest";
+
+  let filteredIssues = activeStatus
     ? issues.filter((issue) => issue.status === activeStatus)
     : issues;
+
+  if (isUrgentFilter) {
+    filteredIssues = filteredIssues.filter(
+      (issue) => issue.urgency === "urgent" && issue.status !== "done"
+    );
+  }
+
+  if (isGuestFilter) {
+    filteredIssues = filteredIssues.filter(
+      (issue) => issue.reporter_type === "guest" && issue.status !== "done"
+    );
+  }
 
   const baseParams = new URLSearchParams();
 
@@ -54,6 +71,14 @@ export default async function IssuesPage({
 
   if (region) {
     baseParams.set("region", region);
+  }
+
+  if (isUrgentFilter) {
+    baseParams.set("urgency", "urgent");
+  }
+
+  if (isGuestFilter) {
+    baseParams.set("reporter", "guest");
   }
 
   function hrefFor(next: IssueStatus | null) {
@@ -149,7 +174,13 @@ export default async function IssuesPage({
         <div className="flex items-center justify-between border-b border-card-border px-4 py-3">
           <div>
             <h2 className="text-sm font-semibold">
-              {activeStatus ? ISSUE_STATUS_LABEL[activeStatus] : "전체 이슈"}
+              {activeStatus
+                ? ISSUE_STATUS_LABEL[activeStatus]
+                : isUrgentFilter
+                  ? "즉시 처리"
+                  : isGuestFilter
+                    ? "게스트 문의"
+                    : "전체 이슈"}
             </h2>
 
             <p className="mt-0.5 text-xs text-subtext">
@@ -291,7 +322,11 @@ export default async function IssuesPage({
               {filteredIssues.length === 0 && (
                 <tr>
                   <td colSpan={8}>
-                    <EmptyIssueState activeStatus={activeStatus} />
+                    <EmptyIssueState
+                      activeStatus={activeStatus}
+                      isUrgentFilter={isUrgentFilter}
+                      isGuestFilter={isGuestFilter}
+                    />
                   </td>
                 </tr>
               )}
@@ -303,7 +338,15 @@ export default async function IssuesPage({
   );
 }
 
-function EmptyIssueState({ activeStatus }: { activeStatus?: IssueStatus }) {
+function EmptyIssueState({
+  activeStatus,
+  isUrgentFilter,
+  isGuestFilter,
+}: {
+  activeStatus?: IssueStatus;
+  isUrgentFilter?: boolean;
+  isGuestFilter?: boolean;
+}) {
   return (
     <div className="flex min-h-48 flex-col items-center justify-center px-4 py-8 text-center">
       <span className="flex h-10 w-10 items-center justify-center rounded-full bg-black/[0.04] text-lg text-subtext dark:bg-white/[0.06]">
@@ -313,7 +356,11 @@ function EmptyIssueState({ activeStatus }: { activeStatus?: IssueStatus }) {
       <p className="mt-3 text-sm font-medium">
         {activeStatus
           ? `${ISSUE_STATUS_LABEL[activeStatus]} 상태의 이슈가 없습니다.`
-          : "등록된 이슈가 없습니다."}
+          : isUrgentFilter
+            ? "즉시 처리할 이슈가 없습니다."
+            : isGuestFilter
+              ? "게스트 문의가 없습니다."
+              : "등록된 이슈가 없습니다."}
       </p>
 
       <p className="mt-1 text-xs text-subtext">

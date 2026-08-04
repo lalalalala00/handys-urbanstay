@@ -64,6 +64,16 @@ export function formatDateHeader(date: Date): string {
   });
 }
 
+export function formatDDay(iso: string | null): string | null {
+  if (!iso) return null;
+  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round(
+    (startOfDay(new Date(iso)) - startOfDay(new Date())) / 86_400_000
+  );
+  if (diffDays === 0) return "D-DAY";
+  return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
+}
+
 export function formatDuration(minutes: number): string {
   const abs = Math.round(Math.abs(minutes));
   const hours = Math.floor(abs / 60);

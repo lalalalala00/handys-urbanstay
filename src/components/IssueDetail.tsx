@@ -12,7 +12,11 @@ import { IssueChat } from "@/components/IssueChat";
 import { RoomModalHeader } from "@/components/RoomModalHeader";
 import { ProgressTimeline } from "@/components/ProgressTimeline";
 import { ActionPanel, ActionSection } from "@/components/ActionPanel";
-import { ISSUE_CATEGORY_LABEL, ISSUE_STATUS_LABEL } from "@/lib/labels";
+import {
+  ISSUE_CATEGORY_LABEL,
+  ISSUE_STATUS_LABEL,
+  ISSUE_URGENCY_LABEL,
+} from "@/lib/labels";
 import { formatDateTime } from "@/lib/format";
 import { ISSUE_STATUS_NEXT, ISSUE_STEPS } from "@/lib/transitions";
 import { CATEGORY_DEFAULT_ROLE } from "@/lib/types";
@@ -147,6 +151,8 @@ export function IssueDetail({
               number={1}
               title="크루 배정"
               description="현장 확인 또는 조치를 진행할 크루를 지정합니다."
+              complete={Boolean(issue.assignee_id)}
+              summary={`크루 배정 · ${issue.assignee?.name ?? "미배정"}`}
             >
               <IssueCrewAssignment
                 issueId={issue.id}
@@ -160,6 +166,10 @@ export function IssueDetail({
               number={2}
               title="분류 및 긴급도"
               description="신고 내용을 확인한 뒤 최종 분류를 설정합니다."
+              complete={Boolean(issue.assignee_id)}
+              summary={`${ISSUE_CATEGORY_LABEL[issue.category]} · ${
+                ISSUE_URGENCY_LABEL[issue.urgency]
+              }`}
             >
               <IssueClassificationAction
                 issueId={issue.id}
@@ -172,6 +182,8 @@ export function IssueDetail({
               number={3}
               title="처리 상태"
               description="실제 업무 진행 상황에 맞게 단계를 변경합니다."
+              complete={issue.status === "done"}
+              summary={`처리 상태 · ${ISSUE_STATUS_LABEL[issue.status]}`}
             >
               <IssueStatusAction
                 issueId={issue.id}
@@ -184,6 +196,8 @@ export function IssueDetail({
               number={4}
               title="운영 담당자"
               description="이슈를 최종 관리할 운영 담당자를 지정합니다."
+              complete={issue.status === "done"}
+              summary={`운영 담당자 · ${managerName ?? "미배정"}`}
             >
               <IssueManagerAssignment
                 managers={managers}

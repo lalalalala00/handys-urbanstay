@@ -83,6 +83,13 @@ export default async function DashboardPage({
   const filterQueryString = filterQuery.toString();
   const withFilter = (href: string) =>
     filterQueryString ? `${href}?${filterQueryString}` : href;
+  const withFilterParams = (path: string, extra: Record<string, string>) => {
+    const params = new URLSearchParams(filterQuery);
+    for (const [key, value] of Object.entries(extra)) {
+      params.set(key, value);
+    }
+    return `${path}?${params.toString()}`;
+  };
   const {
     summary,
     priorityRooms,
@@ -166,7 +173,7 @@ export default async function DashboardPage({
           <div>
             <h1 className="text-lg font-semibold">오늘의 운영 현황</h1>
             <p className="mt-0.5 text-sm text-subtext">
-              {formatDateHeader(now)}
+              {formatDateHeader(now)}요일
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -190,7 +197,7 @@ export default async function DashboardPage({
             detail={`전체 객실 중 ${
               totalRooms > 0 ? Math.round((normalRooms / totalRooms) * 100) : 0
             }%`}
-            href={withFilter("/cleaning")}
+            href={withFilterParams("/rooms", { status: "normal" })}
           />
           <StatCard
             icon={IssueIcon}
@@ -198,7 +205,7 @@ export default async function DashboardPage({
             value={roomStatusDistribution.urgent}
             label="즉시 처리"
             detail="지연/문제 발생"
-            href={withFilter("/issues")}
+            href={withFilterParams("/issues", { urgency: "urgent" })}
           />
           <StatCard
             icon={CleaningIcon}
@@ -206,7 +213,7 @@ export default async function DashboardPage({
             value={roomStatusDistribution.inspection}
             label="검수 대기"
             detail="청소 완료 후 검수"
-            href={withFilter("/cleaning")}
+            href={withFilterParams("/cleaning", { status: "inspection" })}
           />
           <StatCard
             icon={CrewIcon}
@@ -214,7 +221,7 @@ export default async function DashboardPage({
             value={summary.unassigned}
             label="미배정"
             detail="크루 배정 필요"
-            href={withFilter("/cleaning")}
+            href={withFilterParams("/cleaning", { status: "unassigned" })}
           />
           <StatCard
             icon={MessageIcon}
@@ -222,7 +229,7 @@ export default async function DashboardPage({
             value={openIssues.filter((i) => i.reporter_type === "guest").length}
             label="게스트 문의"
             detail="게스트 신고 접수"
-            href={withFilter("/issues")}
+            href={withFilterParams("/issues", { reporter: "guest" })}
           />
         </section>
 
@@ -274,7 +281,7 @@ export default async function DashboardPage({
                         </span>
                       </div>
 
-                      <h3 className="mt-1 min-w-0 truncate text-sm font-bold text-[#2F2F2F]">
+                      <h3 className="min-w-0 truncate text-sm font-bold text-[#2F2F2F]">
                         {card.roomId ? (
                           <Link
                             href={`/rooms/${card.roomId}`}
@@ -287,7 +294,7 @@ export default async function DashboardPage({
                         )}
                       </h3>
 
-                      <div className="mt-4">
+                      <div className={`mt-4`}>
                         <p className="flex items-center gap-1.5 text-xs font-medium text-[#555555]">
                           {card.type === "cleaning" ? (
                             <CleaningIcon
@@ -308,11 +315,7 @@ export default async function DashboardPage({
                       </div>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between">
-                      <span className="text-[11px] text-[#9A9A9A]">
-                        우선 확인 필요
-                      </span>
-
+                    <div className="mt-2 flex items-center justify-end">
                       <Link
                         href={card.href}
                         className={`
@@ -385,7 +388,9 @@ export default async function DashboardPage({
                         </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <RoomStatusBadge status={getRoomDisplayStatus(room, task)} />
+                        <RoomStatusBadge
+                          status={getRoomDisplayStatus(room, task)}
+                        />
                       </td>
                       <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
                         {task ? CLEANING_STATUS_LABEL[task.status] : "-"}

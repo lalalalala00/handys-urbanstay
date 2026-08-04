@@ -143,6 +143,8 @@ export function CleaningTaskDetail({
                 number={1}
                 title="배정 크루"
                 description="현재 배정된 크루를 확인하거나 변경합니다."
+                complete
+                summary={`배정 크루 · ${task.assignee?.name ?? "미배정"}`}
               >
                 <CleaningCrewReassignment
                   taskId={task.id}
@@ -155,6 +157,8 @@ export function CleaningTaskDetail({
               number={task.status === "unassigned" ? 1 : 2}
               title="청소 상태"
               description="청소 진행 상황에 맞게 현재 상태를 관리합니다."
+              complete={task.status === "done"}
+              summary={`청소 상태 · ${CLEANING_STATUS_LABEL[task.status]}`}
             >
               <CleaningTaskActions
                 taskId={task.id}
@@ -172,6 +176,8 @@ export function CleaningTaskDetail({
                   : "청소 완료 처리"
               }
               description={getInspectionDescription(task.status)}
+              complete={task.status === "done"}
+              summary={`검수 완료 · ${managerName ?? "미배정"}`}
             >
               <CleaningInspectionPanel
                 taskId={task.id}
@@ -208,6 +214,30 @@ function CleaningScheduleSummary({
   room: Room;
   task: CleaningTask;
 }) {
+  if (task.status === "done") {
+    return (
+      <section className="rounded-xl border border-success-border bg-success-bg p-5">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-sm font-semibold text-success-text">
+              일정 요약
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-success-text/80">
+              청소와 검수가 모두 완료되어{" "}
+              <strong className="font-semibold text-success-text">
+                입실 가능
+              </strong>{" "}
+              상태입니다.
+            </p>
+          </div>
+          <span className="shrink-0 rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-success-text dark:bg-black/20">
+            입실 가능
+          </span>
+        </div>
+      </section>
+    );
+  }
+
   const isUrgent =
     priority.riskLevel === "urgent" || priority.riskLevel === "warning";
   return (

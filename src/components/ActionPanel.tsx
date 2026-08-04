@@ -1,4 +1,7 @@
-import { ActionIcon } from "@/components/icons";
+"use client";
+
+import { useState } from "react";
+import { ActionIcon, CheckCircleIcon, ChevronDownIcon } from "@/components/icons";
 
 export function ActionPanel({ children }: { children: React.ReactNode }) {
   return (
@@ -29,32 +32,67 @@ export function ActionSection({
   number,
   title,
   description,
+  complete = false,
+  summary,
   children,
 }: {
   number: number;
   title: string;
   description?: string;
+  complete?: boolean;
+  summary?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const [manualExpanded, setManualExpanded] = useState<boolean | null>(null);
+  const expanded = manualExpanded ?? !complete;
+
   return (
     <section className="px-5 py-5">
-      <div className="mb-4 flex flex-col items-start gap-3">
-        <div className="flex">
-          <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
-            {number}
+      <button
+        type="button"
+        onClick={() => setManualExpanded(!expanded)}
+        aria-expanded={expanded}
+        className="flex w-full items-start justify-between gap-3 text-left"
+      >
+        <div className="flex min-w-0">
+          <div
+            className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+              complete
+                ? "bg-primary/15 text-primary"
+                : "bg-primary/10 text-primary"
+            }`}
+          >
+            {complete ? (
+              <CheckCircleIcon className="h-3.5 w-3.5" />
+            ) : (
+              number
+            )}
           </div>
-          <div className="flex flex-col ml-2">
+          <div className="ml-2 flex min-w-0 flex-col">
             <h3 className="text-sm font-semibold">{title}</h3>
-            {description && (
-              <p className="text-xs mt-0.5 leading-4 text-gray-500 dark:text-gray-400">
-                {description}
-              </p>
+            {expanded ? (
+              description && (
+                <p className="mt-0.5 text-xs leading-4 text-gray-500 dark:text-gray-400">
+                  {description}
+                </p>
+              )
+            ) : (
+              summary && (
+                <p className="mt-0.5 truncate text-xs leading-4 text-gray-500 dark:text-gray-400">
+                  {summary}
+                </p>
+              )
             )}
           </div>
         </div>
-      </div>
+        <ChevronDownIcon
+          className={`mt-1 h-4 w-4 shrink-0 text-gray-400 transition-transform ${
+            expanded ? "rotate-180" : ""
+          }`}
+        />
+      </button>
 
-      <div className="">{children}</div>
+      {expanded && <div className="mt-4">{children}</div>}
     </section>
   );
 }
