@@ -1,9 +1,20 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/queries";
+import { Badge, type Tone } from "@/components/Badge";
 import { RoomStatusBadge, IssueStatusBadge } from "@/components/StatusBadges";
-import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";
-import { formatBuffer, formatDateHeader, formatTime } from "@/lib/format";
-import { CLEANING_STATUS_LABEL } from "@/lib/labels";
+import { getRoomDisplayStatus, type RoomDisplayStatus } from "@/lib/roomDisplayStatus";
+import {
+  formatBuffer,
+  formatDateHeader,
+  formatRelative,
+  formatTime,
+} from "@/lib/format";
+import {
+  CLEANING_STATUS_LABEL,
+  ISSUE_URGENCY_LABEL,
+  REPORTER_TYPE_LABEL,
+} from "@/lib/labels";
+import type { Room } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { RoomStatusDonut } from "@/components/dashboard/RoomStatusDonut";
 import { ActivityDrawer } from "@/components/dashboard/ActivityDrawer";
@@ -71,6 +82,65 @@ const URGENT_CARD_CLASSES = {
   },
 } as const;
 
+// Day-relative label ("오늘"/"내일"/"3일 후") for a datetime, independent of
+// the D-day badge used elsewhere.
+function relativeDayLabel(iso: string): string {
+  const startOfDay = (d: Date) =>
+    new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const diffDays = Math.round(
+    (startOfDay(new Date(iso)) - startOfDay(new Date())) / 86_400_000
+  );
+  if (diffDays === 0) return "오늘";
+  if (diffDays === 1) return "내일";
+  if (diffDays === -1) return "어제";
+  return diffDays > 0 ? `${diffDays}일 후` : `${Math.abs(diffDays)}일 전`;
+}
+
+function nextScheduleText(room: Room, displayStatus: RoomDisplayStatus): string {
+  switch (displayStatus) {
+    case "occupied":
+      return room.checkout_at
+        ? `${relativeDayLabel(room.checkout_at)} 퇴실`
+        : "퇴실 일정 없음";
+    case "checkin_due":
+      return room.next_checkin_at
+        ? `체크인 ${formatTime(new Date(room.next_checkin_at))}`
+        : "체크인 시간 미정";
+    case "dirty":
+    case "cleaning":
+    case "inspection":
+      return room.next_checkin_at
+        ? formatRelative(room.next_checkin_at)
+        : "체크인 정보 없음";
+    case "blocked":
+      return "-";
+    case "ready":
+    default:
+      return room.next_checkin_at
+        ? `${relativeDayLabel(room.next_checkin_at)} ${formatTime(
+            new Date(room.next_checkin_at)
+          )} 체크인`
+        : "예약 없음";
+  }
+}
+
+const OPERATIONAL_STATE: Record<RoomDisplayStatus, { label: string; tone: Tone }> = {
+  occupied: { label: "정상", tone: "neutral" },
+  checkin_due: { label: "정상", tone: "neutral" },
+  ready: { label: "준비 완료", tone: "success" },
+  dirty: { label: "작업 필요", tone: "warning" },
+  cleaning: { label: "작업 필요", tone: "warning" },
+  inspection: { label: "작업 필요", tone: "warning" },
+  blocked: { label: "점검 중", tone: "danger" },
+};
+
+function operationalState(room: Room, displayStatus: RoomDisplayStatus) {
+  if (displayStatus === "blocked" && room.operation_note) {
+    return { label: room.operation_note, tone: "danger" as Tone };
+  }
+  return OPERATIONAL_STATE[displayStatus];
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -93,6 +163,8 @@ export default async function DashboardPage({
   const {
     summary,
     priorityRooms,
+    roomsByPriority,
+    cleaningTasksByPriority,
     openIssues,
     crew,
     activity,
@@ -110,12 +182,6 @@ export default async function DashboardPage({
       .filter((issue) => issue.urgency === "urgent")
       .map((issue) => issue.room?.id)
   );
-  const issueByRoomId = new Map(
-    openIssues
-      .filter((issue) => issue.room?.id)
-      .map((issue) => [issue.room!.id, issue])
-  );
-
   const urgentRoomCards: UrgentCard[] = priorityRooms
     .filter(
       ({ room, priority, task }) =>
@@ -337,24 +403,31 @@ export default async function DashboardPage({
         )}
 
         <section>
-          <h2 className="mb-3 text-base font-semibold">우선 처리 객실</h2>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">객실 현황</h2>
+            <Link
+              href={withFilter("/rooms")}
+              className="flex items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
+            >
+              전체 보기
+              <ArrowRightIcon className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           <div className="overflow-x-auto rounded-xl border border-card-border bg-card">
-            <table className="w-full min-w-160 text-sm">
+            <table className="w-full min-w-140 text-sm">
               <thead className="text-left text-xs text-subtext">
                 <tr>
                   <th className="px-4 py-2.5 font-medium">객실</th>
-                  <th className="px-4 py-2.5 font-medium">구분</th>
-                  <th className="px-4 py-2.5 font-medium">상태</th>
-                  <th className="px-4 py-2.5 font-medium">청소</th>
-                  <th className="px-4 py-2.5 font-medium">다음 체크인</th>
-                  <th className="px-4 py-2.5 font-medium">여유 시간</th>
-                  <th className="px-4 py-2.5 font-medium">담당자</th>
+                  <th className="px-4 py-2.5 font-medium">현재 상태</th>
+                  <th className="px-4 py-2.5 font-medium">다음 일정</th>
+                  <th className="px-4 py-2.5 font-medium">운영 상태</th>
                   <th className="px-4 py-2.5 font-medium">액션</th>
                 </tr>
               </thead>
               <tbody>
-                {priorityRooms.map(({ room, task, priority }) => {
-                  const roomIssue = issueByRoomId.get(room.id);
+                {roomsByPriority.slice(0, 6).map(({ room, task }) => {
+                  const displayStatus = getRoomDisplayStatus(room, task);
+                  const opState = operationalState(room, displayStatus);
                   return (
                     <tr key={room.id} className="border-t border-card-border">
                       <td className="px-4 py-2.5 whitespace-nowrap">
@@ -366,178 +439,213 @@ export default async function DashboardPage({
                         </Link>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <div className="flex flex-nowrap gap-1">
-                          {task && (
-                            <span className="inline-flex items-center gap-1 rounded-full bg-black/5 px-1.5 py-0.5 text-[10px] font-medium text-foreground/60 dark:bg-white/10">
-                              <CleaningIcon className="h-3 w-3" />
-                              청소
+                        <div className="flex items-center gap-1.5">
+                          <RoomStatusBadge status={displayStatus} />
+                          {displayStatus === "ready" && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-success-bg px-2 py-0.5 text-[11px] font-medium text-success-text">
+                              <CheckCircleIcon className="h-3 w-3" />
+                              등록완료
                             </span>
-                          )}
-                          {roomIssue && (
-                            <Link
-                              href={`/issues/${roomIssue.id}`}
-                              className="inline-flex items-center gap-1 rounded-full bg-danger-bg px-1.5 py-0.5 text-[10px] font-medium text-danger-text hover:underline"
-                            >
-                              <IssueIcon className="h-3 w-3" />
-                              이슈
-                            </Link>
-                          )}
-                          {!task && !roomIssue && (
-                            <span className="text-xs text-subtext">-</span>
                           )}
                         </div>
                       </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap">
-                        <RoomStatusBadge
-                          status={getRoomDisplayStatus(room, task)}
-                        />
-                      </td>
                       <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
-                        {task ? CLEANING_STATUS_LABEL[task.status] : "-"}
-                      </td>
-                      <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
-                        {room.next_checkin_at
-                          ? formatTime(new Date(room.next_checkin_at))
-                          : "-"}
+                        {nextScheduleText(room, displayStatus)}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            priority.riskLevel === "urgent"
-                              ? "bg-danger-bg text-danger-text"
-                              : priority.riskLevel === "warning"
-                              ? "bg-warning-bg text-warning-text"
-                              : "bg-success-bg text-success-text"
-                          }`}
+                        <Badge tone={opState.tone}>{opState.label}</Badge>
+                      </td>
+                      <td className="px-4 py-2.5 whitespace-nowrap">
+                        <Link
+                          href={`/rooms/${room.id}`}
+                          className="font-medium text-primary hover:underline"
                         >
-                          {formatBuffer(priority.bufferMinutes)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
-                        {task?.assignee?.name ?? "미배정"}
-                      </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap">
-                        {task && roomIssue ? (
-                          <Link
-                            href={`/rooms/${room.id}?view=compact`}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            상세보기
-                          </Link>
-                        ) : task ? (
-                          <Link
-                            href={`/cleaning/${task.id}`}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            {task.status === "unassigned"
-                              ? "배정하기"
-                              : "상세보기"}
-                          </Link>
-                        ) : roomIssue ? (
-                          <Link
-                            href={`/issues/${roomIssue.id}`}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            이슈 확인하기
-                          </Link>
-                        ) : (
-                          <Link
-                            href={withFilter("/cleaning")}
-                            className="font-medium text-primary hover:underline"
-                          >
-                            배정하기
-                          </Link>
-                        )}
+                          상세보기
+                        </Link>
                       </td>
                     </tr>
                   );
                 })}
-                {priorityRooms.length === 0 && (
+                {roomsByPriority.length === 0 && (
                   <tr>
-                    <td
-                      colSpan={8}
-                      className="px-4 py-6 text-center text-subtext"
-                    >
-                      처리할 객실이 없습니다.
+                    <td colSpan={5} className="px-4 py-6 text-center text-subtext">
+                      객실이 없습니다.
                     </td>
                   </tr>
                 )}
               </tbody>
             </table>
           </div>
-          <div className="mt-2 flex items-center justify-end gap-4">
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">
+              청소 작업{" "}
+              <span className="text-subtext">
+                ({cleaningTasksByPriority.length})
+              </span>
+            </h2>
             <Link
               href={withFilter("/cleaning")}
               className="flex items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
             >
-              청소 작업 전체 보기
+              전체 보기
               <ArrowRightIcon className="h-3.5 w-3.5" />
             </Link>
+          </div>
+          <div className="overflow-x-auto rounded-xl border border-card-border bg-card">
+            <table className="w-full min-w-140 text-sm">
+              <thead className="text-left text-xs text-subtext">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">객실</th>
+                  <th className="px-4 py-2.5 font-medium">청소 상태</th>
+                  <th className="px-4 py-2.5 font-medium">담당자</th>
+                  <th className="px-4 py-2.5 font-medium">여유 시간</th>
+                  <th className="px-4 py-2.5 font-medium">액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {cleaningTasksByPriority.slice(0, 6).map(({ room, task, priority }) => (
+                  <tr key={room.id} className="border-t border-card-border">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <Link
+                        href={`/rooms/${room.id}`}
+                        className="font-medium hover:text-primary hover:underline"
+                      >
+                        {room.branch} {room.room_number}호
+                      </Link>
+                    </td>
+                    <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
+                      {CLEANING_STATUS_LABEL[task!.status]}
+                    </td>
+                    <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
+                      {task!.assignee?.name ?? "미배정"}
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          priority.riskLevel === "urgent"
+                            ? "bg-danger-bg text-danger-text"
+                            : priority.riskLevel === "warning"
+                            ? "bg-warning-bg text-warning-text"
+                            : "bg-success-bg text-success-text"
+                        }`}
+                      >
+                        {formatBuffer(priority.bufferMinutes)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <Link
+                        href={`/cleaning/${task!.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        {task!.status === "unassigned" ? "배정하기" : "상세보기"}
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {cleaningTasksByPriority.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-6 text-center text-subtext">
+                      처리할 청소 작업이 없습니다.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-semibold">
+              룸이슈{" "}
+              <span className="text-subtext">({openIssues.length})</span>
+            </h2>
             <Link
               href={withFilter("/issues")}
               className="flex items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
             >
-              이슈 전체 보기
+              전체 보기
               <ArrowRightIcon className="h-3.5 w-3.5" />
             </Link>
           </div>
-        </section>
-
-        <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <div className="rounded-xl border border-card-border bg-card p-4">
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-sm font-semibold">
-                미처리 객실 이슈{" "}
-                <span className="text-subtext">({openIssues.length})</span>
-              </h2>
-              <Link
-                href={withFilter("/issues")}
-                className="text-xs font-medium text-primary hover:underline"
-              >
-                모든 이슈 보기
-              </Link>
-            </div>
-            <ul className="flex flex-col gap-3">
-              {openIssues.slice(0, 3).map((issue) => (
-                <li key={issue.id}>
-                  <Link
-                    href={`/issues/${issue.id}`}
-                    className="flex items-center justify-between gap-3 rounded-lg px-1 py-1 transition-colors hover:bg-black/3 dark:hover:bg-white/5"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">
-                          {issue.room?.branch} {issue.room?.room_number}호
-                        </span>
-                        <IssueStatusBadge status={issue.status} />
-                      </div>
-                      <p className="mt-0.5 truncate text-xs text-subtext">
-                        {issue.description}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-              {openIssues.length === 0 && (
-                <li className="py-4 text-center text-sm text-subtext">
-                  미처리 이슈가 없습니다.
-                </li>
-              )}
-            </ul>
-          </div>
-
-          <div className="rounded-xl border border-card-border bg-card p-4">
-            <h2 className="mb-3 text-sm font-semibold">객실 상태 분포</h2>
-            <RoomStatusDonut
-              distribution={roomStatusDistribution}
-              total={totalRooms}
-            />
+          <div className="overflow-x-auto rounded-xl border border-card-border bg-card">
+            <table className="w-full min-w-140 text-sm">
+              <thead className="text-left text-xs text-subtext">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">객실</th>
+                  <th className="px-4 py-2.5 font-medium">신고 내용</th>
+                  <th className="px-4 py-2.5 font-medium">신고자</th>
+                  <th className="px-4 py-2.5 font-medium">긴급도</th>
+                  <th className="px-4 py-2.5 font-medium">상태</th>
+                  <th className="px-4 py-2.5 font-medium">액션</th>
+                </tr>
+              </thead>
+              <tbody>
+                {openIssues.slice(0, 6).map((issue) => (
+                  <tr key={issue.id} className="border-t border-card-border">
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span className="font-medium">
+                        {issue.room?.branch} {issue.room?.room_number}호
+                      </span>
+                    </td>
+                    <td className="max-w-60 truncate px-4 py-2.5 text-subtext">
+                      {issue.description}
+                    </td>
+                    <td className="px-4 py-2.5 text-subtext whitespace-nowrap">
+                      {REPORTER_TYPE_LABEL[issue.reporter_type]}
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                          issue.urgency === "urgent"
+                            ? "bg-danger-bg text-danger-text"
+                            : issue.urgency === "normal"
+                            ? "bg-warning-bg text-warning-text"
+                            : "bg-black/5 text-foreground/60 dark:bg-white/10"
+                        }`}
+                      >
+                        {ISSUE_URGENCY_LABEL[issue.urgency]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <IssueStatusBadge status={issue.status} />
+                    </td>
+                    <td className="px-4 py-2.5 whitespace-nowrap">
+                      <Link
+                        href={`/issues/${issue.id}`}
+                        className="font-medium text-primary hover:underline"
+                      >
+                        확인하기
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+                {openIssues.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-6 text-center text-subtext">
+                      미처리 이슈가 없습니다.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
 
       <aside className="hidden w-72 shrink-0 flex-col gap-4 xl:flex">
         <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
+
+        <div className="rounded-xl border border-card-border bg-card p-4">
+          <h2 className="mb-3 text-sm font-semibold">객실 상태 분포</h2>
+          <RoomStatusDonut
+            distribution={roomStatusDistribution}
+            total={totalRooms}
+          />
+        </div>
 
         <div className="rounded-xl border border-card-border bg-card p-4">
           <div className="mb-3 flex items-center justify-between gap-2">

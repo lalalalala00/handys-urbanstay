@@ -109,16 +109,20 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
     return { room, task: task ?? null, priority };
   });
 
-  const priorityRooms = [...roomsWithPriority]
-    .sort((a, b) => {
-      const ka = roomSortKey(a.room, a.task ?? undefined, a.priority);
-      const kb = roomSortKey(b.room, b.task ?? undefined, b.priority);
-      for (let i = 0; i < ka.length; i++) {
-        if (ka[i] !== kb[i]) return ka[i] - kb[i];
-      }
-      return 0;
-    })
-    .slice(0, 8);
+  const roomsByPriority = [...roomsWithPriority].sort((a, b) => {
+    const ka = roomSortKey(a.room, a.task ?? undefined, a.priority);
+    const kb = roomSortKey(b.room, b.task ?? undefined, b.priority);
+    for (let i = 0; i < ka.length; i++) {
+      if (ka[i] !== kb[i]) return ka[i] - kb[i];
+    }
+    return 0;
+  });
+
+  const priorityRooms = roomsByPriority.slice(0, 8);
+
+  const cleaningTasksByPriority = roomsByPriority.filter(
+    (r) => r.task && r.task.status !== "done"
+  );
 
   const summary = {
     todaysCheckins: rooms.filter((r) => isToday(r.next_checkin_at)).length,
@@ -247,6 +251,8 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
   return {
     summary,
     priorityRooms,
+    roomsByPriority,
+    cleaningTasksByPriority,
     openIssues: issues,
     crew,
     activity,
