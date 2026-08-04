@@ -1,5 +1,6 @@
+import { Suspense } from "react";
 import { getOpenAlertsCount } from "@/lib/queries";
-import { BellIcon, ChevronDownIcon } from "./icons";
+import { BellIcon, ChevronDownIcon, LocationIcon } from "./icons";
 import { RegionSelector } from "./RegionSelector";
 
 export async function Header() {
@@ -12,7 +13,9 @@ export async function Header() {
       </span>
 
       <div className="flex items-center gap-4">
-        <RegionSelector />
+        <Suspense fallback={<RegionSelectorFallback />}>
+          <RegionSelector />
+        </Suspense>
 
         <button
           type="button"
@@ -42,5 +45,15 @@ export async function Header() {
         </button>
       </div>
     </header>
+  );
+}
+
+function RegionSelectorFallback() {
+  return (
+    <div className="flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-foreground/80">
+      <LocationIcon className="h-3.5 w-3.5 text-subtext" />
+      전체 지역
+      <ChevronDownIcon className="h-3.5 w-3.5 text-subtext" />
+    </div>
   );
 }

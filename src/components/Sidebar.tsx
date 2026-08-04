@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -29,8 +30,6 @@ const SOON_LINKS = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const query = searchParams.toString();
 
   return (
     <aside className="flex h-full w-56 shrink-0 flex-col justify-between border-r border-card-border bg-card px-4 py-5">
@@ -43,30 +42,9 @@ export function Sidebar() {
         </Link>
 
         <nav className="flex flex-col gap-0.5">
-          {NAV_LINKS.map((link) => {
-            const active = pathname === link.href;
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={query ? `${link.href}?${query}` : link.href}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
-                  active
-                    ? "bg-success-bg font-medium text-foreground"
-                    : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"
-                }`}
-              >
-                <span
-                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
-                    active ? "bg-primary text-white" : ""
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                </span>
-                {link.label}
-              </Link>
-            );
-          })}
+          <Suspense fallback={<NavLinks pathname={pathname} query="" />}>
+            <QueryAwareNavLinks pathname={pathname} />
+          </Suspense>
 
           {SOON_LINKS.map((link) => (
             <span
@@ -93,5 +71,41 @@ export function Sidebar() {
         </button>
       </div>
     </aside>
+  );
+}
+
+function QueryAwareNavLinks({ pathname }: { pathname: string }) {
+  const searchParams = useSearchParams();
+  return <NavLinks pathname={pathname} query={searchParams.toString()} />;
+}
+
+function NavLinks({ pathname, query }: { pathname: string; query: string }) {
+  return (
+    <>
+      {NAV_LINKS.map((link) => {
+        const active = pathname === link.href;
+        const Icon = link.icon;
+        return (
+          <Link
+            key={link.href}
+            href={query ? `${link.href}?${query}` : link.href}
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors ${
+              active
+                ? "bg-success-bg font-medium text-foreground"
+                : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"
+            }`}
+          >
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-md ${
+                active ? "bg-primary text-white" : ""
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+            </span>
+            {link.label}
+          </Link>
+        );
+      })}
+    </>
   );
 }
