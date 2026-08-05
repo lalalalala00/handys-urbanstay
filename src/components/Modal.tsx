@@ -1,7 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { createContext, useCallback, useContext, useEffect } from "react";
 import { useRouter } from "next/navigation";
+
+const ModalCloseContext = createContext<(() => void) | null>(null);
+
+export function useModalClose() {
+  return useContext(ModalCloseContext);
+}
 
 export function Modal({
   children,
@@ -11,10 +17,11 @@ export function Modal({
   wide?: boolean;
 }) {
   const router = useRouter();
+  const close = useCallback(() => router.back(), [router]);
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") router.back();
+      if (e.key === "Escape") close();
     }
 
     document.addEventListener("keydown", onKeyDown);
@@ -22,14 +29,14 @@ export function Modal({
     return () => {
       document.removeEventListener("keydown", onKeyDown);
     };
-  }, [router]);
+  }, [close]);
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-50 flex items-end justify-center overscroll-none bg-black/50 sm:items-center sm:p-4"
-      onClick={() => router.back()}
+      onClick={close}
     >
       <div
         className={`max-h-[90vh] w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-black/10 bg-background p-6 shadow-xl sm:rounded-2xl dark:border-white/10 ${
@@ -37,14 +44,9 @@ export function Modal({
         }`}
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={() => router.back()}
-          aria-label="닫기"
-          className="mb-3 ml-auto flex h-7 w-7 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/10"
-        >
-          ✕
-        </button>
-        {children}
+        <ModalCloseContext.Provider value={close}>
+          {children}
+        </ModalCloseContext.Provider>
       </div>
     </div>
   );

@@ -24,6 +24,8 @@ export function ClickableTableRow({
       className={`cursor-pointer ${className ?? ""}`}
       role="link"
       tabIndex={0}
+      onMouseEnter={() => router.prefetch(href)}
+      onFocus={() => router.prefetch(href)}
       onClick={(event) => {
         if (!isInteractiveTarget(event.target)) router.push(href);
       }}

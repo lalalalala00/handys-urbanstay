@@ -30,11 +30,13 @@ export function CleaningTaskDetail({
   room,
   cleaners,
   managers,
+  roomOpenIssueCount,
 }: {
   task: CleaningTask;
   room: Room;
   cleaners: Staff[];
   managers: Staff[];
+  roomOpenIssueCount: number;
 }) {
   const priority = calcRoomPriority(room, task);
   const checkinMinutes = minutesUntil(room.next_checkin_at);
@@ -58,6 +60,10 @@ export function CleaningTaskDetail({
         operatorName={managerName}
         crewName={task.assignee?.name ?? null}
         titleSuffix="청소"
+        operationControl={{
+          roomOpenIssueCount,
+          suggestedNote: "청소 작업 확인 필요",
+        }}
       />
       <div className="rounded-xl border border-black/10 bg-white/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03]">
         <ProgressTimeline

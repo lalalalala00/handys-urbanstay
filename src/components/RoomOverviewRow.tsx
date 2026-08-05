@@ -5,7 +5,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { IssueIcon } from "@/components/icons";
 import { CLEANING_STATUS_LABEL } from "@/lib/labels";
 import { calcRoomPriority } from "@/lib/priority";
-import { formatBuffer, formatDateTimeWithDay, minutesUntil } from "@/lib/format";
+import { formatBuffer, formatDateTimeWithDay, formatRelative, minutesUntil } from "@/lib/format";
 import type { RoomOverviewItem } from "@/lib/queries";
 
 export function RoomOverviewRow({ item }: { item: RoomOverviewItem }) {
@@ -123,7 +123,13 @@ function buildRowInfo(item: RoomOverviewItem): RowInfo {
       };
     case "ready":
     default:
-      return { primary: "예약 대기 중", scheduleLine, badge };
+      return {
+        primary: task?.completed_at
+          ? `게시됨 · ${formatRelative(task.completed_at)}`
+          : "예약 대기 중",
+        scheduleLine,
+        badge,
+      };
   }
 }
 

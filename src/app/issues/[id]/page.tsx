@@ -13,14 +13,17 @@ export default async function IssueDetailPage({
   const { id } = await params;
 
   let issue;
+  let staffList;
   try {
-    issue = await getIssueById(id);
+    [issue, staffList] = await Promise.all([
+      getIssueById(id),
+      getStaffList(),
+    ]);
   } catch {
     notFound();
   }
   if (!issue || !issue.room) notFound();
 
-  const staffList = await getStaffList();
   const crew = await getRoomCrew(issue.room_id);
 
   return (

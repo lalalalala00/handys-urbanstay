@@ -68,6 +68,10 @@ export function RoomDetail({
         task={task}
         operatorName={operator?.name ?? null}
         crewName={task?.assignee?.name ?? null}
+        operationControl={{
+          roomOpenIssueCount: issues.length,
+          suggestedNote: "객실 운영 점검 필요",
+        }}
       />
 
       {!isCombinedView && (

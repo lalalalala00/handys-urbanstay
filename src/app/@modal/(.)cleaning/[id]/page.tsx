@@ -13,20 +13,29 @@ export default async function CleaningTaskModal({
   const { id } = await params;
 
   let task;
+  let staffList;
   try {
-    task = await getCleaningTaskById(id);
+    [task, staffList] = await Promise.all([
+      getCleaningTaskById(id),
+      getStaffList(),
+    ]);
   } catch {
     notFound();
   }
   if (!task || !task.room) notFound();
 
-  const staffList = await getStaffList();
   const cleaners = staffList.filter((s) => s.role === "cleaner");
   const managers = staffList.filter((s) => s.role === "manager");
 
   return (
     <Modal wide>
-      <CleaningTaskDetail task={task} room={task.room} cleaners={cleaners} managers={managers} />
+      <CleaningTaskDetail
+        task={task}
+        room={task.room}
+        cleaners={cleaners}
+        managers={managers}
+        roomOpenIssueCount={task.roomOpenIssueCount}
+      />
     </Modal>
   );
 }

@@ -21,14 +21,16 @@ export default function RootLayout({
       lang="ko"
       className="h-full antialiased"
     >
-      <body className="flex h-full overflow-hidden">
+      <body className="h-full overflow-hidden">
         <ToastProvider>
-          <Sidebar />
-          <div className="flex min-w-0 flex-1 flex-col">
-            <Header />
-            <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-6">
-              {children}
-            </main>
+          <div className="flex h-full w-full min-w-0 overflow-hidden">
+            <Sidebar />
+            <div className="flex min-w-0 flex-1 flex-col">
+              <Header />
+              <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-6">
+                {children}
+              </main>
+            </div>
           </div>
           {modal}
         </ToastProvider>

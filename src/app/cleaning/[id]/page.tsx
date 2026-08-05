@@ -13,14 +13,17 @@ export default async function CleaningTaskDetailPage({
   const { id } = await params;
 
   let task;
+  let staffList;
   try {
-    task = await getCleaningTaskById(id);
+    [task, staffList] = await Promise.all([
+      getCleaningTaskById(id),
+      getStaffList(),
+    ]);
   } catch {
     notFound();
   }
   if (!task || !task.room) notFound();
 
-  const staffList = await getStaffList();
   const cleaners = staffList.filter((s) => s.role === "cleaner");
   const managers = staffList.filter((s) => s.role === "manager");
 
@@ -29,7 +32,13 @@ export default async function CleaningTaskDetailPage({
       <Link href="/cleaning" className="text-xs text-gray-500 hover:underline">
         ← 청소 작업 목록
       </Link>
-      <CleaningTaskDetail task={task} room={task.room} cleaners={cleaners} managers={managers} />
+      <CleaningTaskDetail
+        task={task}
+        room={task.room}
+        cleaners={cleaners}
+        managers={managers}
+        roomOpenIssueCount={task.roomOpenIssueCount}
+      />
     </div>
   );
 }

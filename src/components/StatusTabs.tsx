@@ -52,7 +52,7 @@ export function StatusTabs<T extends string>({
         {groups.map((group) => (
           <StatusTab
             key={group.status}
-            href={hrefFor(group.status)}
+            href={activeStatus === group.status ? hrefFor(null) : hrefFor(group.status)}
             label={group.label}
             count={counts[group.status]}
             active={activeStatus === group.status}

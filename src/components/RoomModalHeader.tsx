@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { RoomStatusBadge } from "@/components/StatusBadges";
 import { Badge } from "@/components/Badge";
 import { CopyButton } from "@/components/CopyButton";
+import { useModalClose } from "@/components/Modal";
+import { useToast } from "@/components/Toast";
 import { LocationIcon } from "@/components/icons";
 import { regionForBranch } from "@/lib/regions";
-import { formatDateTimeWithDay } from "@/lib/format";
+import { formatDateTimeWithDay, formatRelative } from "@/lib/format";
 import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";
-import type { CleaningTask, Room } from "@/lib/types";
+import type { CleaningTask, OperationStatus, Room } from "@/lib/types";
 
 export function RoomModalHeader({
   room,
@@ -16,16 +19,58 @@ export function RoomModalHeader({
   operatorName,
   crewName,
   titleSuffix,
+  operationControl,
 }: {
   room: Room;
   task?: CleaningTask | null;
   operatorName: string | null;
   crewName: string | null;
   titleSuffix?: string;
+  operationControl?: { roomOpenIssueCount: number; suggestedNote: string };
 }) {
   const region = regionForBranch(room.branch);
+  const displayStatus = getRoomDisplayStatus(room, task);
   const [showReservation, setShowReservation] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+  const showToast = useToast();
+  const closeModal = useModalClose();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const isBlocked = room.operation_status === "blocked";
+
+  async function changeOperationStatus() {
+    const nextStatus: OperationStatus = isBlocked ? "ready" : "blocked";
+    setPending(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/rooms/${room.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationStatus: nextStatus,
+          operationNote:
+            nextStatus === "blocked" ? operationControl?.suggestedNote : null,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error ?? "객실 운영 상태를 변경하지 못했습니다.");
+        return;
+      }
+
+      showToast(
+        nextStatus === "blocked"
+          ? "객실 판매를 중지했습니다."
+          : "객실 판매를 재개했습니다."
+      );
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
 
   useEffect(() => {
     if (!showReservation) return;
@@ -39,39 +84,107 @@ export function RoomModalHeader({
   }, [showReservation]);
 
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4">
-      <div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
-          <LocationIcon className="h-3.5 w-3.5" />
-          <span>{room.branch}</span>
-        </div>
-        <div ref={containerRef} className="relative mt-1 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setShowReservation((v) => !v)}
-            className="text-xl font-semibold underline decoration-dotted decoration-gray-400 underline-offset-4 transition-colors hover:decoration-foreground"
-          >
-            {room.room_number}호{titleSuffix ? ` ${titleSuffix}` : ""}
-          </button>
-          <RoomStatusBadge status={getRoomDisplayStatus(room, task)} />
+    <div>
+      {(operationControl || isBlocked || closeModal) && (
+        <div className="mb-3 flex min-h-7 items-start justify-between gap-4">
+          <div className="flex min-w-0 flex-col gap-1" aria-live="polite">
+            {(operationControl || isBlocked) && (
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                    isBlocked ? "bg-danger-text" : "bg-success-text"
+                  }`}
+                />
+                <span className="text-[11px] text-subtext">판매 채널</span>
+                <span
+                  className={`text-xs font-medium ${
+                    isBlocked ? "text-danger-text" : "text-success-text"
+                  }`}
+                >
+                  {isBlocked ? "노출 중지" : "노출 중"}
+                </span>
+                {isBlocked && room.operation_note && (
+                  <span className="hidden max-w-48 truncate text-[11px] text-subtext sm:inline">
+                    {room.operation_note}
+                  </span>
+                )}
+                {operationControl && (
+                  <button
+                    type="button"
+                    onClick={changeOperationStatus}
+                    disabled={
+                      pending ||
+                      (isBlocked && operationControl.roomOpenIssueCount > 0)
+                    }
+                    className={`h-7 shrink-0 rounded-md px-2.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                      isBlocked
+                        ? "bg-primary text-white hover:bg-primary-hover"
+                        : "border border-danger-border text-danger-text hover:bg-danger-bg"
+                    }`}
+                  >
+                    {pending ? "변경 중..." : isBlocked ? "판매 재개" : "판매 중지"}
+                  </button>
+                )}
+              </div>
+            )}
 
-          {showReservation && <ReservationPopover room={room} />}
-        </div>
-        {region && (
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            {region.city} &gt; {region.district}
+            {isBlocked &&
+              operationControl &&
+              operationControl.roomOpenIssueCount > 0 && (
+                <p className="text-[10px] text-subtext">
+                  미완료 이슈 {operationControl.roomOpenIssueCount}건 처리 후 재개 가능
+                </p>
+              )}
+            {error && <p className="text-[10px] text-danger-text">{error}</p>}
           </div>
-        )}
-        {room.operation_status === "blocked" && (
-          <div className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-danger-bg px-2.5 py-1 text-xs font-medium text-danger-text">
-            판매 중지{room.operation_note ? `: ${room.operation_note}` : ""}
-          </div>
-        )}
-      </div>
 
-      <div className="flex items-center gap-5">
-        <PersonField label="담당 운영자" name={operatorName} sub={room.branch} variant="operator" />
-        <PersonField label="담당 크루" name={crewName} variant="crew" />
+          {closeModal && (
+            <button
+              type="button"
+              onClick={closeModal}
+              aria-label="닫기"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/10"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+            <LocationIcon className="h-3.5 w-3.5" />
+            <span>{room.branch}</span>
+          </div>
+          <div ref={containerRef} className="relative mt-1 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowReservation((v) => !v)}
+              className="text-xl font-semibold underline decoration-dotted decoration-gray-400 underline-offset-4 transition-colors hover:decoration-foreground"
+            >
+              {room.room_number}호{titleSuffix ? ` ${titleSuffix}` : ""}
+            </button>
+            <RoomStatusBadge status={displayStatus} />
+            {displayStatus === "ready" && task?.completed_at && (
+              <span className="text-xs font-medium text-success-text">
+                게시됨 · {formatRelative(task.completed_at)}
+              </span>
+            )}
+
+            {showReservation && <ReservationPopover room={room} />}
+          </div>
+          {region && (
+            <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {region.city} &gt; {region.district}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-5">
+          <PersonField label="담당 운영자" name={operatorName} sub={room.branch} variant="operator" />
+          <PersonField label="담당 크루" name={crewName} variant="crew" />
+        </div>
       </div>
     </div>
   );

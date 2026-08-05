@@ -44,7 +44,9 @@ export default async function RoomsOverviewPage({
 
   function hrefForStatus(next: RoomDisplayStatus) {
     const params = new URLSearchParams(baseParams);
-    params.set("status", next);
+    if (activeStatus !== next) {
+      params.set("status", next);
+    }
     return `/rooms?${params.toString()}`;
   }
 

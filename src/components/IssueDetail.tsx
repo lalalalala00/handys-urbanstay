@@ -12,7 +12,6 @@ import { IssueChat } from "@/components/IssueChat";
 import { RoomModalHeader } from "@/components/RoomModalHeader";
 import { ProgressTimeline } from "@/components/ProgressTimeline";
 import { ActionPanel, ActionSection } from "@/components/ActionPanel";
-import { RoomOperationControl } from "@/components/RoomOperationControl";
 import {
   ISSUE_CATEGORY_LABEL,
   REPORTER_TYPE_LABEL,
@@ -55,6 +54,10 @@ export function IssueDetail({
         operatorName={managerName}
         crewName={crew?.name ?? null}
         titleSuffix="이슈"
+        operationControl={{
+          roomOpenIssueCount,
+          suggestedNote: `${ISSUE_CATEGORY_LABEL[issue.category]} 이슈 확인 필요`,
+        }}
       />
 
       <div className="rounded-xl border border-black/10 bg-white/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03]">
@@ -189,24 +192,6 @@ export function IssueDetail({
 
             <ActionSection
               number={3}
-              title="객실 운영"
-              description="문제가 해결될 때까지 객실 판매 여부를 관리합니다."
-              complete={room.operation_status === "ready" && issue.status === "done"}
-              summary={`객실 운영 · ${
-                room.operation_status === "blocked" ? "판매 중지" : "판매 가능"
-              }`}
-            >
-              <RoomOperationControl
-                roomId={room.id}
-                operationStatus={room.operation_status}
-                operationNote={room.operation_note}
-                roomOpenIssueCount={roomOpenIssueCount}
-                suggestedNote={`${ISSUE_CATEGORY_LABEL[issue.category]} 이슈 확인 필요`}
-              />
-            </ActionSection>
-
-            <ActionSection
-              number={4}
               title="처리 상태"
               description="실제 업무 진행 상황에 맞게 단계를 변경합니다."
               complete={issue.status === "done"}
@@ -220,7 +205,7 @@ export function IssueDetail({
             </ActionSection>
 
             <ActionSection
-              number={5}
+              number={4}
               title="운영 담당자"
               description="이슈를 최종 관리할 운영 담당자를 지정합니다."
               complete={issue.status === "done"}
