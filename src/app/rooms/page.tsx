@@ -3,7 +3,7 @@ import { RoomOverviewRow } from "@/components/RoomOverviewRow";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ROOM_DISPLAY_STATUS_LABEL } from "@/lib/labels";
 import { addressForBranch } from "@/lib/regions";
-import { isToday } from "@/lib/format";
+import { calcRoomPriority } from "@/lib/priority";
 import {
   CheckCircleIcon,
   ChevronDownIcon,
@@ -12,7 +12,7 @@ import {
   LockIcon,
   RoomIcon,
 } from "@/components/icons";
-import { ROOM_STATUS_BUCKET, type RoomDisplayStatus } from "@/lib/roomDisplayStatus";
+import type { RoomDisplayStatus } from "@/lib/roomDisplayStatus";
 
 export const dynamic = "force-dynamic";
 
@@ -23,24 +23,20 @@ export default async function RoomsOverviewPage({
     branch?: string;
     region?: string;
     status?: string;
-    checkout?: string;
   }>;
 }) {
-  const { branch, region, status, checkout } = await searchParams;
+  const { branch, region, status } = await searchParams;
 
   const { items, summary } = await getRoomsOverview({ branch, region });
 
   const activeStatus = isRoomDisplayStatus(status) ? status : undefined;
   const isNormalFilter = status === "normal";
-  const checkoutToday = checkout === "today";
 
   const filteredItems = activeStatus
     ? items.filter((item) => item.displayStatus === activeStatus)
     : isNormalFilter
-      ? items.filter((item) => ROOM_STATUS_BUCKET[item.displayStatus] === "normal")
-      : checkoutToday
-        ? items.filter((item) => isToday(item.room.checkout_at))
-        : items;
+      ? items.filter(isOperationallyNormal)
+      : items;
 
   const baseParams = new URLSearchParams();
   if (branch) baseParams.set("branch", branch);
@@ -49,12 +45,6 @@ export default async function RoomsOverviewPage({
   function hrefForStatus(next: RoomDisplayStatus) {
     const params = new URLSearchParams(baseParams);
     params.set("status", next);
-    return `/rooms?${params.toString()}`;
-  }
-
-  function hrefForCheckoutToday() {
-    const params = new URLSearchParams(baseParams);
-    params.set("checkout", "today");
     return `/rooms?${params.toString()}`;
   }
 
@@ -69,7 +59,7 @@ export default async function RoomsOverviewPage({
         </p>
       </header>
 
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <StatCard
           icon={RoomIcon}
           tone="neutral"
@@ -87,14 +77,6 @@ export default async function RoomsOverviewPage({
           href={hrefForStatus("checkin_due")}
         />
         <StatCard
-          icon={ClockIcon}
-          tone="warning"
-          value={summary.checkoutDue}
-          label="퇴실 예정"
-          detail="오늘 체크아웃 예정"
-          href={hrefForCheckoutToday()}
-        />
-        <StatCard
           icon={CleaningIcon}
           tone="warning"
           value={summary.needsCleaning}
@@ -106,8 +88,8 @@ export default async function RoomsOverviewPage({
           icon={CheckCircleIcon}
           tone="success"
           value={summary.ready}
-          label="입실 준비"
-          detail="바로 배정 가능한 객실"
+          label="입실 가능"
+          detail="청소·검수 완료"
           href={hrefForStatus("ready")}
         />
         <StatCard
@@ -170,12 +152,22 @@ export default async function RoomsOverviewPage({
 function isRoomDisplayStatus(value: string | undefined): value is RoomDisplayStatus {
   return (
     value === "occupied" ||
-    value === "cleaning" ||
-    value === "inspection" ||
     value === "dirty" ||
     value === "checkin_due" ||
     value === "ready" ||
     value === "blocked"
+  );
+}
+
+function isOperationallyNormal(item: RoomOverviewItem) {
+  const priority = calcRoomPriority(item.room, item.task ?? undefined);
+  return (
+    item.room.operation_status !== "blocked" &&
+    item.openIssueCount === 0 &&
+    item.task?.status !== "unassigned" &&
+    item.task?.status !== "inspection" &&
+    priority.riskLevel !== "urgent" &&
+    priority.riskLevel !== "warning"
   );
 }
 

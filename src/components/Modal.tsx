@@ -16,21 +16,23 @@ export function Modal({
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") router.back();
     }
+
     document.addEventListener("keydown", onKeyDown);
-    document.body.style.overflow = "hidden";
+
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = "";
     };
   }, [router]);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end justify-center overscroll-none bg-black/50 sm:items-center sm:p-4"
       onClick={() => router.back()}
     >
       <div
-        className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-black/10 bg-background p-6 shadow-xl sm:rounded-2xl dark:border-white/10 ${
+        className={`max-h-[90vh] w-full overflow-y-auto overscroll-contain rounded-t-2xl border border-black/10 bg-background p-6 shadow-xl sm:rounded-2xl dark:border-white/10 ${
           wide ? "max-w-4xl" : "max-w-lg"
         }`}
         onClick={(e) => e.stopPropagation()}

@@ -8,7 +8,7 @@ import type { ActivityCategory, ActivityItem } from "@/lib/queries";
 const TABS: { key: ActivityCategory | "all"; label: string }[] = [
   { key: "all", label: "전체" },
   { key: "cleaning", label: "청소" },
-  { key: "issue", label: "객실 이슈" },
+  { key: "issue", label: "운영 이슈" },
   { key: "assignment", label: "배정" },
 ];
 

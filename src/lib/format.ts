@@ -1,3 +1,14 @@
+const OPERATIONS_TIME_ZONE = "Asia/Seoul";
+
+function operationDateKey(date: Date): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: OPERATIONS_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
 export function formatDateTime(iso: string | null): string {
   if (!iso) return "-";
   return new Date(iso).toLocaleString("ko-KR", {
@@ -5,6 +16,7 @@ export function formatDateTime(iso: string | null): string {
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: OPERATIONS_TIME_ZONE,
   });
 }
 
@@ -16,18 +28,13 @@ export function formatDateTimeWithDay(iso: string | null): string {
     weekday: "short",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: OPERATIONS_TIME_ZONE,
   });
 }
 
 export function isToday(iso: string | null): boolean {
   if (!iso) return false;
-  const d = new Date(iso);
-  const now = new Date();
-  return (
-    d.getUTCFullYear() === now.getUTCFullYear() &&
-    d.getUTCMonth() === now.getUTCMonth() &&
-    d.getUTCDate() === now.getUTCDate()
-  );
+  return operationDateKey(new Date(iso)) === operationDateKey(new Date());
 }
 
 export function formatRelative(iso: string | null): string {
@@ -52,7 +59,11 @@ export function minutesUntil(iso: string | null): number | null {
 }
 
 export function formatTime(date: Date): string {
-  return date.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+  return date.toLocaleTimeString("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: OPERATIONS_TIME_ZONE,
+  });
 }
 
 export function formatDateHeader(date: Date): string {
@@ -61,15 +72,25 @@ export function formatDateHeader(date: Date): string {
     month: "long",
     day: "numeric",
     weekday: "short",
+    timeZone: OPERATIONS_TIME_ZONE,
   });
+}
+
+export function relativeOperationDay(iso: string): string {
+  const target = Date.parse(`${operationDateKey(new Date(iso))}T00:00:00Z`);
+  const today = Date.parse(`${operationDateKey(new Date())}T00:00:00Z`);
+  const diffDays = Math.round((target - today) / 86_400_000);
+  if (diffDays === 0) return "오늘";
+  if (diffDays === 1) return "내일";
+  if (diffDays === -1) return "어제";
+  return diffDays > 0 ? `${diffDays}일 후` : `${Math.abs(diffDays)}일 전`;
 }
 
 export function formatDDay(iso: string | null): string | null {
   if (!iso) return null;
-  const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-  const diffDays = Math.round(
-    (startOfDay(new Date(iso)) - startOfDay(new Date())) / 86_400_000
-  );
+  const target = Date.parse(`${operationDateKey(new Date(iso))}T00:00:00Z`);
+  const today = Date.parse(`${operationDateKey(new Date())}T00:00:00Z`);
+  const diffDays = Math.round((target - today) / 86_400_000);
   if (diffDays === 0) return "D-DAY";
   return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
 }

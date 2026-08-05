@@ -30,7 +30,7 @@ export function CrewStatusCard({
       </div>
 
       {crew.length > 0 ? (
-        <ul className="flex flex-col gap-4">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-1">
           {crew.map((item) => (
             <CrewStatusRow
               key={item.staff.id}
@@ -63,7 +63,7 @@ function CrewStatusRow({
   item: CrewStatusItem;
   maxActiveCount: number;
 }) {
-  const { staff, working, activeCount, completedCount, branch } = item;
+  const { staff, working, activeCount, completedCount } = item;
 
   return (
     <li>

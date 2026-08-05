@@ -9,8 +9,8 @@ import {
 import { ISSUE_CATEGORY_LABEL, ISSUE_STATUS_LABEL } from "@/lib/labels";
 import { formatDateTime } from "@/lib/format";
 import type { IssueStatus } from "@/lib/types";
-import { IssueStatusTabs } from "@/components/issue/IssueStatusTabs";
 import { StatusTabs } from "@/components/StatusTabs";
+import { ClickableTableRow } from "@/components/ClickableTableRow";
 
 export const dynamic = "force-dynamic";
 
@@ -113,7 +113,7 @@ export default async function IssuesPage({
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold">객실 이슈</h1>
+            <h1 className="text-lg font-semibold">운영 이슈</h1>
 
             {unresolvedCount > 0 && (
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
@@ -123,7 +123,7 @@ export default async function IssuesPage({
           </div>
 
           <p className="mt-1 text-xs text-subtext">
-            객실에서 접수된 문제와 처리 진행 상황을 확인합니다.
+            시설 및 게스트 문제와 처리 진행 상황을 확인합니다.
           </p>
         </div>
 
@@ -209,9 +209,7 @@ export default async function IssuesPage({
 
                 <th className="w-[110px] px-4 py-3 font-medium">담당 크루</th>
 
-                <th className="w-10 px-2 py-3">
-                  <span className="sr-only">상세 보기</span>
-                </th>
+                <th className="w-28 px-4 py-3 font-medium">액션</th>
               </tr>
             </thead>
 
@@ -221,8 +219,9 @@ export default async function IssuesPage({
                   issue.urgency === "urgent" && issue.status !== "done";
 
                 return (
-                  <tr
+                  <ClickableTableRow
                     key={issue.id}
+                    href={`/issues/${issue.id}`}
                     className={[
                       "group border-t border-card-border transition-colors",
                       isUrgent
@@ -306,16 +305,20 @@ export default async function IssuesPage({
                       </Link>
                     </td>
 
-                    <td className="px-2 py-3.5">
+                    <td className="px-4 py-3.5">
                       <Link
                         href={`/issues/${issue.id}`}
                         aria-label="이슈 상세 보기"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-subtext opacity-0 transition hover:bg-black/5 hover:text-primary group-hover:opacity-100 dark:hover:bg-white/10"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-primary hover:underline"
                       >
-                        <ArrowRightIcon className="h-4 w-4" />
+                        {!issue.assignee && issue.status !== "done"
+                          ? "배정하기"
+                          : issue.status === "done"
+                            ? "상세보기"
+                            : "확인하기"}
                       </Link>
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 );
               })}
 
@@ -369,24 +372,5 @@ function EmptyIssueState({
           : "새 이슈가 접수되면 이곳에 표시됩니다."}
       </p>
     </div>
-  );
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={className}
-    >
-      <path
-        d="M5 12h14M13 6l6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

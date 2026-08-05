@@ -25,7 +25,13 @@ export default async function IssueModal({
 
   return (
     <Modal wide>
-      <IssueDetail issue={issue} room={issue.room} staffList={staffList} crew={crew} />
+      <IssueDetail
+        issue={issue}
+        room={issue.room}
+        staffList={staffList}
+        crew={crew}
+        roomOpenIssueCount={issue.roomOpenIssueCount}
+      />
     </Modal>
   );
 }

@@ -321,7 +321,7 @@ function IssueListCard({ issues }: { issues: Issue[] }) {
       <div className="mb-4 flex items-start justify-between gap-3">
         <CardHeader
           icon={<IssueIcon className="h-4 w-4" />}
-          title="객실 이슈"
+          title="운영 이슈"
           description="현재 접수된 문제와 처리 상태입니다."
           className="mb-0"
         />
@@ -362,8 +362,8 @@ function IssueListCard({ issues }: { issues: Issue[] }) {
                 <div className="mt-3 flex items-center justify-between">
                   <IssueStatusBadge status={issue.status} />
 
-                  <span className="text-xs font-medium text-primary opacity-0 transition-opacity group-hover:opacity-100">
-                    상세 보기 →
+                  <span className="text-xs font-medium text-primary">
+                    확인하기
                   </span>
                 </div>
               </Link>
@@ -372,7 +372,7 @@ function IssueListCard({ issues }: { issues: Issue[] }) {
         </ul>
       ) : (
         <EmptyState
-          title="등록된 객실 이슈가 없습니다."
+          title="등록된 운영 이슈가 없습니다."
           description="현재 확인이 필요한 문제 없이 정상 운영 중입니다."
           tone="success"
         />

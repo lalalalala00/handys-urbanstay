@@ -12,8 +12,10 @@ import { IssueChat } from "@/components/IssueChat";
 import { RoomModalHeader } from "@/components/RoomModalHeader";
 import { ProgressTimeline } from "@/components/ProgressTimeline";
 import { ActionPanel, ActionSection } from "@/components/ActionPanel";
+import { RoomOperationControl } from "@/components/RoomOperationControl";
 import {
   ISSUE_CATEGORY_LABEL,
+  REPORTER_TYPE_LABEL,
   ISSUE_STATUS_LABEL,
   ISSUE_URGENCY_LABEL,
 } from "@/lib/labels";
@@ -27,11 +29,13 @@ export function IssueDetail({
   room,
   staffList,
   crew,
+  roomOpenIssueCount,
 }: {
   issue: Issue;
   room: Room;
   staffList: Staff[];
   crew: Staff | null;
+  roomOpenIssueCount: number;
 }) {
   const suggestedRole = CATEGORY_DEFAULT_ROLE[issue.category];
 
@@ -78,7 +82,9 @@ export function IssueDetail({
                 <UrgencyBadge urgency={issue.urgency} />
               </Field>
 
-              <Field label="신고자">{issue.reporter_type}</Field>
+              <Field label="신고자">
+                {REPORTER_TYPE_LABEL[issue.reporter_type]}
+              </Field>
 
               <Field label="접수 시간">
                 {formatDateTime(issue.created_at)}
@@ -108,8 +114,11 @@ export function IssueDetail({
               <strong className="font-semibold text-foreground">
                 {ISSUE_CATEGORY_LABEL[issue.category]}
               </strong>{" "}
-              이슈가 접수되었습니다. 게스트는 &ldquo;
-              {issue.description}&rdquo;라고 신고했으며 현재{" "}
+              이슈가 접수되었습니다. 신고자는{" "}
+              <strong className="font-semibold text-foreground">
+                {REPORTER_TYPE_LABEL[issue.reporter_type]}
+              </strong>
+              이며, 접수 내용은 &ldquo;{issue.description}&rdquo;입니다. 현재{" "}
               <strong className="font-semibold text-foreground">
                 {ISSUE_STATUS_LABEL[issue.status]}
               </strong>{" "}
@@ -180,6 +189,24 @@ export function IssueDetail({
 
             <ActionSection
               number={3}
+              title="객실 운영"
+              description="문제가 해결될 때까지 객실 판매 여부를 관리합니다."
+              complete={room.operation_status === "ready" && issue.status === "done"}
+              summary={`객실 운영 · ${
+                room.operation_status === "blocked" ? "판매 중지" : "판매 가능"
+              }`}
+            >
+              <RoomOperationControl
+                roomId={room.id}
+                operationStatus={room.operation_status}
+                operationNote={room.operation_note}
+                roomOpenIssueCount={roomOpenIssueCount}
+                suggestedNote={`${ISSUE_CATEGORY_LABEL[issue.category]} 이슈 확인 필요`}
+              />
+            </ActionSection>
+
+            <ActionSection
+              number={4}
               title="처리 상태"
               description="실제 업무 진행 상황에 맞게 단계를 변경합니다."
               complete={issue.status === "done"}
@@ -193,7 +220,7 @@ export function IssueDetail({
             </ActionSection>
 
             <ActionSection
-              number={4}
+              number={5}
               title="운영 담당자"
               description="이슈를 최종 관리할 운영 담당자를 지정합니다."
               complete={issue.status === "done"}

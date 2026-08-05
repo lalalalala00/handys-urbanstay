@@ -11,8 +11,6 @@ import type { RiskLevel } from "@/lib/priority";
 
 const ROOM_TONE: Record<RoomDisplayStatus, Tone> = {
   occupied: "neutral",
-  cleaning: "info",
-  inspection: "warning",
   dirty: "danger",
   checkin_due: "info",
   ready: "success",

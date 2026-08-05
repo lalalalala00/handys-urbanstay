@@ -8,7 +8,7 @@ export default async function NewIssuePage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold">객실 이슈 등록</h1>
+      <h1 className="text-lg font-semibold">운영 이슈 등록</h1>
       <NewIssueForm rooms={rooms} />
     </div>
   );

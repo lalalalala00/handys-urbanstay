@@ -65,10 +65,10 @@ export function RegionSelector() {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-primary/40"
+        className="flex max-w-36 items-center gap-1.5 rounded-lg border border-card-border px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-primary/40 sm:max-w-none"
       >
         <LocationIcon className="h-3.5 w-3.5 text-subtext" />
-        {currentLabel}
+        <span className="truncate">{currentLabel}</span>
         <ChevronDownIcon className="h-3.5 w-3.5 text-subtext" />
       </button>
 

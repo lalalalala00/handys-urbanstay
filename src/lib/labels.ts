@@ -26,30 +26,28 @@ export const ACTIVITY_ACTOR_ROLE_LABEL: Record<StaffRole, string> = {
 };
 
 export const ROOM_DISPLAY_STATUS_LABEL: Record<RoomDisplayStatus, string> = {
-  occupied: "투숙중",
-  cleaning: "청소중",
-  inspection: "검수대기",
-  dirty: "청소필요",
-  checkin_due: "입실예정",
-  ready: "입실준비완료",
-  blocked: "판매중지",
+  occupied: "투숙 중",
+  dirty: "청소 필요",
+  checkin_due: "입실 예정",
+  ready: "입실 가능",
+  blocked: "판매 중지",
 };
 
 export const CLEANING_STATUS_LABEL: Record<CleaningTaskStatus, string> = {
   unassigned: "미배정",
-  assigned: "배정완료",
-  cleaning: "진행중",
-  inspection: "검수대기",
+  assigned: "배정 완료",
+  cleaning: "청소 중",
+  inspection: "검수 대기",
   done: "완료",
 };
 
 export const ISSUE_STATUS_LABEL: Record<IssueStatus, string> = {
-  new: "신규접수",
-  checking: "확인중",
-  assigned: "담당자배정",
-  in_progress: "처리중",
-  inspection: "검수대기",
-  done: "처리완료",
+  new: "신규 접수",
+  checking: "접수 확인",
+  assigned: "담당자 배정",
+  in_progress: "처리 중",
+  inspection: "완료 확인",
+  done: "완료",
 };
 
 export const ISSUE_CATEGORY_LABEL: Record<IssueCategory, string> = {

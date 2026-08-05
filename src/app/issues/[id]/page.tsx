@@ -26,9 +26,15 @@ export default async function IssueDetailPage({
   return (
     <div className="flex flex-col gap-6">
       <Link href="/issues" className="text-xs text-gray-500 hover:underline">
-        ← 객실 이슈 목록
+        ← 운영 이슈 목록
       </Link>
-      <IssueDetail issue={issue} room={issue.room} staffList={staffList} crew={crew} />
+      <IssueDetail
+        issue={issue}
+        room={issue.room}
+        staffList={staffList}
+        crew={crew}
+        roomOpenIssueCount={issue.roomOpenIssueCount}
+      />
     </div>
   );
 }

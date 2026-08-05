@@ -1,7 +1,7 @@
 -- Stay Operations Dashboard schema
 -- Run this in the Supabase SQL editor (or `supabase db push`) before seed.sql.
 -- RLS is enabled with no policies: only the server-side service role key
--- (used exclusively inside Next.js Route Handlers) can read/write these tables.
+-- (used inside Server Components and Route Handlers) can access these tables.
 
 create extension if not exists pgcrypto;
 

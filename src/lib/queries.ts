@@ -1,11 +1,11 @@
 import { getSupabaseServerClient } from "./supabase-server";
-import { calcRoomPriority, roomSortKey } from "./priority";
+import { calcRoomPriority, roomSortKey, type RoomPriority } from "./priority";
 import { branchesInRegion } from "./regions";
 import { isToday } from "./format";
 import { ACTIVITY_ACTOR_ROLE_LABEL, REPORTER_TYPE_LABEL } from "./labels";
 import {
   getRoomDisplayStatus,
-  ROOM_STATUS_BUCKET,
+  ROOM_DISPLAY_STATUS_RANK,
   type RoomDisplayStatus,
 } from "./roomDisplayStatus";
 import type { CleaningTask, Issue, Room, Staff } from "./types";
@@ -46,6 +46,16 @@ export type ActivityItem = {
   category: ActivityCategory;
 };
 
+export type DashboardWorkItem = {
+  id: string;
+  kind: "cleaning" | "issue";
+  room: Room;
+  task: CleaningTask | null;
+  issue: Issue | null;
+  priority: RoomPriority | null;
+  priorityTier: number;
+};
+
 export async function getDashboardData(filter?: { branch?: string; region?: string }) {
   const supabase = getSupabaseServerClient();
 
@@ -58,20 +68,18 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
   } else if (regionBranches.length > 0) {
     roomsQuery = roomsQuery.in("branch", regionBranches);
   }
-  const isFiltered = Boolean(branch) || regionBranches.length > 0;
-
   const [roomsRes, tasksRes, issuesRes, allIssuesRes, staffRes] = await Promise.all([
     roomsQuery,
     supabase
       .from("cleaning_tasks")
-      .select("*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)"),
+      .select("*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)")
+      .order("created_at", { ascending: false }),
     supabase
       .from("issues")
       .select(
         "*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)"
       )
       .neq("status", "done")
-      .order("urgency", { ascending: true })
       .order("created_at", { ascending: true }),
     supabase
       .from("issues")
@@ -92,8 +100,12 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
   const tasks = ((tasksRes.data ?? []) as CleaningTask[]).filter((t) =>
     roomIds.has(t.room_id)
   );
-  const issues = ((issuesRes.data ?? []) as Issue[]).filter((i) => roomIds.has(i.room_id));
-  const allIssues = ((allIssuesRes.data ?? []) as Issue[]).filter((i) => roomIds.has(i.room_id));
+  const issues = ((issuesRes.data ?? []) as Issue[])
+    .filter((i) => roomIds.has(i.room_id))
+    .sort(compareIssues);
+  const allIssues = ((allIssuesRes.data ?? []) as Issue[]).filter((i) =>
+    roomIds.has(i.room_id)
+  );
   const cleaners = (staffRes.data ?? []) as Staff[];
 
   const latestTaskByRoom = new Map<string, CleaningTask>();
@@ -110,6 +122,11 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
   });
 
   const roomsByPriority = [...roomsWithPriority].sort((a, b) => {
+    const statusDifference =
+      ROOM_DISPLAY_STATUS_RANK[getRoomDisplayStatus(a.room, a.task)] -
+      ROOM_DISPLAY_STATUS_RANK[getRoomDisplayStatus(b.room, b.task)];
+    if (statusDifference !== 0) return statusDifference;
+
     const ka = roomSortKey(a.room, a.task ?? undefined, a.priority);
     const kb = roomSortKey(b.room, b.task ?? undefined, b.priority);
     for (let i = 0; i < ka.length; i++) {
@@ -118,74 +135,69 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
     return 0;
   });
 
-  const priorityRooms = roomsByPriority.slice(0, 8);
+  const cleaningTasksByPriority = [...roomsWithPriority]
+    .filter((item) => item.task && item.task.status !== "done")
+    .sort(compareCleaningRoomItems);
 
-  const cleaningTasksByPriority = roomsByPriority.filter(
-    (r) => r.task && r.task.status !== "done"
+  const roomById = new Map(rooms.map((room) => [room.id, room]));
+  const priorityWorkItems = buildDashboardWorkItems(
+    roomsWithPriority,
+    issues,
+    roomById
   );
 
-  const summary = {
-    todaysCheckins: rooms.filter((r) => isToday(r.next_checkin_at)).length,
-    todaysCheckouts: rooms.filter((r) => isToday(r.checkout_at)).length,
-    needsCleaning: tasks.filter((t) => t.status !== "done").length,
-    unassigned: tasks.filter((t) => t.status === "unassigned").length,
-    openIssues: issues.length,
-    delayRisk: roomsWithPriority.filter(
-      (r) => r.priority.riskLevel === "urgent" || r.priority.riskLevel === "warning"
-    ).length,
-  };
-
-  const scopedCleaners = isFiltered
-    ? cleaners.filter((member) => tasks.some((t) => t.assignee_id === member.id))
-    : cleaners;
-
-  const crew = scopedCleaners.map((member) => {
-    const myTasks = tasks.filter(
-      (t) => t.assignee_id === member.id && t.status !== "done"
-    );
-    const completedCount = tasks.filter(
-      (t) =>
-        t.assignee_id === member.id &&
-        t.status === "done" &&
-        t.completed_at &&
-        isToday(t.completed_at)
-    ).length;
-    const cleaningTask = myTasks.find((t) => t.status === "cleaning");
-    const inspectionTask = myTasks.find((t) => t.status === "inspection");
-    const assignedTask = myTasks.find((t) => t.status === "assigned");
-    const activeTask = cleaningTask ?? inspectionTask ?? assignedTask ?? null;
-
-    let working = false;
-    let progress: number | null = null;
-    if (cleaningTask) {
-      working = true;
-      progress = cleaningTask.started_at
-        ? Math.min(
-            100,
-            Math.round(
-              ((Date.now() - new Date(cleaningTask.started_at).getTime()) /
-                60000 /
-                cleaningTask.estimated_minutes) *
-                100
-            )
-          )
-        : 0;
-    } else if (inspectionTask) {
-      working = true;
-      progress = 100;
-    } else if (assignedTask) {
-      progress = 0;
+  const attentionRoomIds = new Set<string>();
+  for (const item of roomsWithPriority) {
+    if (
+      item.room.operation_status === "blocked" ||
+      item.task?.status === "unassigned" ||
+      item.task?.status === "inspection" ||
+      item.priority.riskLevel === "urgent" ||
+      item.priority.riskLevel === "warning"
+    ) {
+      attentionRoomIds.add(item.room.id);
     }
+  }
+  for (const issue of issues) attentionRoomIds.add(issue.room_id);
+
+  const latestTasks = Array.from(latestTaskByRoom.values());
+  const crew = cleaners.map((member) => {
+    const activeTasks = latestTasks.filter(
+      (task) => task.assignee_id === member.id && task.status !== "done"
+    );
+    const activeTask =
+      activeTasks.find((task) => task.status === "cleaning") ??
+      activeTasks.find((task) => task.status === "inspection") ??
+      activeTasks.find((task) => task.status === "assigned") ??
+      null;
 
     return {
       staff: member,
-      working,
-      progress,
-      activeCount: myTasks.length,
-      completedCount,
+      working:
+        activeTask?.status === "cleaning" || activeTask?.status === "inspection",
+      activeCount: activeTasks.length,
+      completedCount: tasks.filter(
+        (task) =>
+          task.assignee_id === member.id &&
+          task.status === "done" &&
+          Boolean(task.completed_at) &&
+          isToday(task.completed_at)
+      ).length,
       branch: activeTask?.room?.branch ?? null,
     };
   });
+
+  const summary = {
+    normal: rooms.length - attentionRoomIds.size,
+    immediate: priorityWorkItems.filter((item) => item.priorityTier <= 2).length,
+    inspection: roomsWithPriority.filter(
+      (item) => item.task?.status === "inspection"
+    ).length,
+    unassigned: roomsWithPriority.filter(
+      (item) => item.task?.status === "unassigned"
+    ).length,
+    guestInquiries: issues.filter((issue) => issue.reporter_type === "guest").length,
+  };
 
   const activityHistory: ActivityItem[] = [
     ...tasks.map((task) => {
@@ -222,45 +234,127 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
 
   const activity = activityHistory.slice(0, 5);
 
-  const roomStatusDistribution = {
-    normal: 0,
-    urgent: 0,
-    inspection: 0,
-    assigned: 0,
-  };
-  for (const room of rooms) {
-    const displayStatus = getRoomDisplayStatus(room, latestTaskByRoom.get(room.id));
-    roomStatusDistribution[ROOM_STATUS_BUCKET[displayStatus]] += 1;
-  }
-
-  const checkinHourCounts = new Map<number, number>();
-  for (const room of rooms) {
-    if (!room.next_checkin_at) continue;
-    const hour = new Date(room.next_checkin_at).getHours();
-    checkinHourCounts.set(hour, (checkinHourCounts.get(hour) ?? 0) + 1);
-  }
-  let checkinPeakHour: number | null = null;
-  let peakCount = 0;
-  for (const [hour, count] of checkinHourCounts) {
-    if (count > peakCount) {
-      peakCount = count;
-      checkinPeakHour = hour;
-    }
-  }
-
   return {
     summary,
-    priorityRooms,
+    priorityWorkItems,
     roomsByPriority,
     cleaningTasksByPriority,
     openIssues: issues,
     crew,
     activity,
     activityHistory,
-    roomStatusDistribution,
     totalRooms: rooms.length,
-    checkinPeakHour: peakCount > 1 ? checkinPeakHour : null,
   };
+}
+
+type RoomPriorityItem = {
+  room: Room;
+  task: CleaningTask | null;
+  priority: RoomPriority;
+};
+
+const CLEANING_STATUS_RANK: Record<CleaningTask["status"], number> = {
+  unassigned: 0,
+  assigned: 1,
+  cleaning: 1,
+  inspection: 2,
+  done: 3,
+};
+
+function compareCleaningRoomItems(a: RoomPriorityItem, b: RoomPriorityItem) {
+  const statusDifference =
+    CLEANING_STATUS_RANK[a.task?.status ?? "done"] -
+    CLEANING_STATUS_RANK[b.task?.status ?? "done"];
+  if (statusDifference !== 0) return statusDifference;
+
+  const ka = roomSortKey(a.room, a.task ?? undefined, a.priority);
+  const kb = roomSortKey(b.room, b.task ?? undefined, b.priority);
+  for (let index = 0; index < ka.length; index += 1) {
+    if (ka[index] !== kb[index]) return ka[index] - kb[index];
+  }
+  return 0;
+}
+
+const ISSUE_STATUS_RANK: Record<Issue["status"], number> = {
+  new: 0,
+  checking: 1,
+  assigned: 2,
+  in_progress: 3,
+  inspection: 4,
+  done: 5,
+};
+
+function compareIssues(a: Issue, b: Issue) {
+  const urgencyDifference = URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency];
+  if (urgencyDifference !== 0) return urgencyDifference;
+
+  const statusDifference = ISSUE_STATUS_RANK[a.status] - ISSUE_STATUS_RANK[b.status];
+  if (statusDifference !== 0) return statusDifference;
+
+  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+}
+
+function buildDashboardWorkItems(
+  roomsWithPriority: RoomPriorityItem[],
+  issues: Issue[],
+  roomById: Map<string, Room>
+): DashboardWorkItem[] {
+  const cleaningItems: DashboardWorkItem[] = roomsWithPriority
+    .filter((item) => item.task && item.task.status !== "done")
+    .map((item) => {
+      const minutesToCheckin = item.room.next_checkin_at
+        ? (new Date(item.room.next_checkin_at).getTime() - Date.now()) / 60_000
+        : null;
+      const isCheckinImminent =
+        minutesToCheckin !== null && minutesToCheckin >= 0 && minutesToCheckin <= 60;
+
+      const priorityTier = isCheckinImminent
+        ? 0
+        : item.priority.bufferMinutes !== null && item.priority.bufferMinutes < 0
+          ? 2
+          : item.task?.status === "inspection"
+            ? 3
+            : 4;
+
+      return {
+        id: `cleaning-${item.task!.id}`,
+        kind: "cleaning" as const,
+        room: item.room,
+        task: item.task,
+        issue: null,
+        priority: item.priority,
+        priorityTier,
+      };
+    });
+
+  const issueItems: DashboardWorkItem[] = issues.flatMap((issue) => {
+    const room = roomById.get(issue.room_id);
+    if (!room) return [];
+    return [
+      {
+        id: `issue-${issue.id}`,
+        kind: "issue" as const,
+        room,
+        task: null,
+        issue,
+        priority: null,
+        priorityTier: issue.urgency === "urgent" ? 1 : 4,
+      },
+    ];
+  });
+
+  return [...cleaningItems, ...issueItems].sort((a, b) => {
+    if (a.priorityTier !== b.priorityTier) return a.priorityTier - b.priorityTier;
+
+    if (a.kind === "cleaning" && b.kind === "cleaning") {
+      return (a.priority?.bufferMinutes ?? Number.POSITIVE_INFINITY) -
+        (b.priority?.bufferMinutes ?? Number.POSITIVE_INFINITY);
+    }
+    if (a.kind === "issue" && b.kind === "issue") {
+      return compareIssues(a.issue!, b.issue!);
+    }
+    return a.kind === "cleaning" ? -1 : 1;
+  });
 }
 
 export async function getOpenAlertsCount() {
@@ -296,6 +390,10 @@ export async function getCleaningTasksList(filter?: { branch?: string; region?: 
     .map((task) => ({ task, priority: calcRoomPriority(task.room!, task) }));
 
   withPriority.sort((a, b) => {
+    const statusDifference =
+      CLEANING_STATUS_RANK[a.task.status] - CLEANING_STATUS_RANK[b.task.status];
+    if (statusDifference !== 0) return statusDifference;
+
     const ka = roomSortKey(a.task.room!, a.task, a.priority);
     const kb = roomSortKey(b.task.room!, b.task, b.priority);
     for (let i = 0; i < ka.length; i++) {
@@ -340,7 +438,7 @@ export async function getIssuesList(filter?: { branch?: string; region?: string 
     issues = issues.filter((i) => i.room && allowedBranches.includes(i.room.branch));
   }
 
-  return issues.sort((a, b) => URGENCY_RANK[a.urgency] - URGENCY_RANK[b.urgency]);
+  return issues.sort(compareIssues);
 }
 
 export async function getIssueById(id: string) {
@@ -351,7 +449,16 @@ export async function getIssueById(id: string) {
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
-  return data as Issue;
+  const issue = data as Issue;
+
+  const { count, error: openCountError } = await supabase
+    .from("issues")
+    .select("id", { count: "exact", head: true })
+    .eq("room_id", issue.room_id)
+    .neq("status", "done");
+  if (openCountError) throw new Error(openCountError.message);
+
+  return { ...issue, roomOpenIssueCount: count ?? 0 };
 }
 
 // The crew assigned to this room's latest cleaning task, for the shared
@@ -539,6 +646,11 @@ export async function getRoomsOverview(filter?: { branch?: string; region?: stri
       };
     })
     .sort((a, b) => {
+      const statusDifference =
+        ROOM_DISPLAY_STATUS_RANK[a.displayStatus] -
+        ROOM_DISPLAY_STATUS_RANK[b.displayStatus];
+      if (statusDifference !== 0) return statusDifference;
+
       if (a.room.branch !== b.room.branch) {
         return a.room.branch.localeCompare(b.room.branch, "ko");
       }
@@ -559,11 +671,7 @@ export async function getRoomsOverview(filter?: { branch?: string; region?: stri
     if (item.room.occupancy_status === "occupied") summary.occupied += 1;
     if (item.displayStatus === "checkin_due") summary.checkinDue += 1;
     if (isToday(item.room.checkout_at)) summary.checkoutDue += 1;
-    if (
-      item.displayStatus === "dirty" ||
-      item.displayStatus === "cleaning" ||
-      item.displayStatus === "inspection"
-    ) {
+    if (item.displayStatus === "dirty") {
       summary.needsCleaning += 1;
     }
     if (item.displayStatus === "ready") summary.ready += 1;

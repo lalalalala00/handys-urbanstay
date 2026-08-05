@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import {
   CleaningStatusBadge,
   RiskBadge,
@@ -119,10 +120,12 @@ export function CleaningTaskDetail({
               </div>
               {photoUrl ? (
                 <div className="overflow-hidden rounded-xl border border-black/10 dark:border-white/10">
-                  {}
-                  <img
+                  <Image
                     src={photoUrl}
                     alt="청소 완료 사진"
+                    width={1200}
+                    height={720}
+                    unoptimized
                     className="max-h-[360px] w-full object-cover"
                   />
                 </div>

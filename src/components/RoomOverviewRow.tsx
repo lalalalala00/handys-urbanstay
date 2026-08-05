@@ -53,6 +53,10 @@ export function RoomOverviewRow({ item }: { item: RoomOverviewItem }) {
       <div className="hidden w-36 shrink-0 items-center justify-end self-center text-right lg:flex">
         <span className="text-xs font-medium whitespace-nowrap">{assigneeLine}</span>
       </div>
+
+      <span className="hidden shrink-0 self-center whitespace-nowrap text-xs font-semibold text-primary sm:inline">
+        객실 보기
+      </span>
     </Link>
   );
 }
@@ -98,9 +102,8 @@ function buildRowInfo(item: RoomOverviewItem): RowInfo {
     };
   }
 
-  // checkin_due, dirty, cleaning, inspection, ready all revolve around the
-  // same clock: time left until the next check-in, minus any cleaning still
-  // owed — exactly what calcRoomPriority already computes for sorting.
+  // Vacant rooms revolve around the same clock: time left until the next
+  // check-in, minus any cleaning still owed.
   const priority = calcRoomPriority(room, task ?? undefined);
   const scheduleLine = room.next_checkin_at
     ? `체크인 ${formatDateTimeWithDay(room.next_checkin_at)}`
@@ -111,11 +114,10 @@ function buildRowInfo(item: RoomOverviewItem): RowInfo {
     case "checkin_due":
       return { primary: guestLabel(room), phone: room.guest_phone, scheduleLine, badge };
     case "dirty":
-      return { primary: "체크아웃 완료 · 청소 필요", scheduleLine, badge };
-    case "cleaning":
-    case "inspection":
       return {
-        primary: task ? CLEANING_STATUS_LABEL[task.status] : "청소 진행 중",
+        primary: task
+          ? `청소 · ${CLEANING_STATUS_LABEL[task.status]}`
+          : "체크아웃 완료 · 청소 필요",
         scheduleLine,
         badge,
       };

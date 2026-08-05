@@ -9,6 +9,7 @@ import {
 import { formatBuffer, formatDateTime, formatRelative } from "@/lib/format";
 import type { CleaningTaskStatus } from "@/lib/types";
 import { StatusTabs } from "@/components/StatusTabs";
+import { ClickableTableRow } from "@/components/ClickableTableRow";
 
 export const dynamic = "force-dynamic";
 
@@ -159,9 +160,7 @@ export default async function CleaningTasksPage({
 
                 <th className="w-[140px] px-4 py-3 font-medium">담당 크루</th>
 
-                <th className="w-10 px-2 py-3">
-                  <span className="sr-only">상세 보기</span>
-                </th>
+                <th className="w-28 px-4 py-3 font-medium">액션</th>
               </tr>
             </thead>
 
@@ -174,8 +173,9 @@ export default async function CleaningTasksPage({
                 const isUnassigned = task.status === "unassigned";
 
                 return (
-                  <tr
+                  <ClickableTableRow
                     key={task.id}
+                    href={`/cleaning/${task.id}`}
                     className={[
                       "group border-t border-card-border transition-colors",
                       isUrgent
@@ -277,16 +277,22 @@ export default async function CleaningTasksPage({
                       </Link>
                     </td>
 
-                    <td className="px-2 py-3.5">
+                    <td className="px-4 py-3.5">
                       <Link
                         href={`/cleaning/${task.id}`}
                         aria-label="청소 작업 상세 보기"
-                        className="flex h-8 w-8 items-center justify-center rounded-lg text-subtext opacity-0 transition hover:bg-black/5 hover:text-primary group-hover:opacity-100 dark:hover:bg-white/10"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-primary hover:underline"
                       >
-                        <ArrowRightIcon className="h-4 w-4" />
+                        {task.status === "unassigned"
+                          ? "배정하기"
+                          : task.status === "inspection"
+                            ? "검수하기"
+                            : task.status === "done"
+                              ? "상세보기"
+                              : "확인하기"}
                       </Link>
                     </td>
-                  </tr>
+                  </ClickableTableRow>
                 );
               })}
 
@@ -400,24 +406,5 @@ function EmptyCleaningState({
           : "청소 작업이 생성되면 이곳에 표시됩니다."}
       </p>
     </div>
-  );
-}
-
-function ArrowRightIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={className}
-    >
-      <path
-        d="M5 12h14M13 6l6 6-6 6"
-        stroke="currentColor"
-        strokeWidth="1.7"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }
