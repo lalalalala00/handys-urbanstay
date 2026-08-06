@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { RoomStatusBadge } from "@/components/common/StatusBadges";
 import { Badge } from "@/components/common/Badge";
 import { CopyButton } from "@/components/common/CopyButton";
+import { ShareButton } from "@/components/common/ShareButton";
 import { useModalClose } from "@/components/common/Modal";
 import { useToast } from "@/components/common/Toast";
 import { LocationIcon } from "@/components/common/icons";
@@ -220,16 +221,19 @@ export function RoomModalHeader({
             {error && <p className="text-[10px] text-danger-text">{error}</p>}
           </div>
 
-          {closeModal && (
-            <button
-              type="button"
-              onClick={closeModal}
-              aria-label="닫기"
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/10"
-            >
-              ✕
-            </button>
-          )}
+          <div className="flex shrink-0 items-center gap-1">
+            <ShareButton title={`${room.branch} ${room.room_number}호${titleSuffix ? ` ${titleSuffix}` : ""}`} />
+            {closeModal && (
+              <button
+                type="button"
+                onClick={closeModal}
+                aria-label="닫기"
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                ✕
+              </button>
+            )}
+          </div>
         </div>
       )}
 

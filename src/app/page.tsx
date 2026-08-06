@@ -199,8 +199,8 @@ export default async function DashboardPage({
           tone="info"
           value={summary.unassigned}
           label="미배정"
-          detail="크루 배정 필요"
-          href={withFilterParams("/cleaning", { status: "unassigned" })}
+          detail={`청소 ${summary.unassignedCleaning}건 · 이슈 ${summary.unassignedIssues}건`}
+          href={withFilter("/unassigned")}
         />
         <StatCard
           icon={MessageIcon}

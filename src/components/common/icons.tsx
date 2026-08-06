@@ -204,3 +204,15 @@ export function CopyIcon({ className }: IconProps) {
     </svg>
   );
 }
+
+export function ShareIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <circle cx="18" cy="5.5" r="2.5" />
+      <circle cx="6" cy="12" r="2.5" />
+      <circle cx="18" cy="18.5" r="2.5" />
+      <path d="M8.2 10.7 15.8 6.8" />
+      <path d="M8.2 13.3 15.8 17.2" />
+    </svg>
+  );
+}

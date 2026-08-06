@@ -187,15 +187,20 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
     };
   });
 
+  const unassignedCleaningCount = roomsWithPriority.filter(
+    (item) => item.task?.status === "unassigned"
+  ).length;
+  const unassignedIssueCount = issues.filter((issue) => !issue.assignee_id).length;
+
   const summary = {
     normal: rooms.length - attentionRoomIds.size,
     immediate: priorityWorkItems.filter((item) => item.priorityTier <= 2).length,
     inspection: roomsWithPriority.filter(
       (item) => item.task?.status === "inspection"
     ).length,
-    unassigned: roomsWithPriority.filter(
-      (item) => item.task?.status === "unassigned"
-    ).length,
+    unassigned: unassignedCleaningCount + unassignedIssueCount,
+    unassignedCleaning: unassignedCleaningCount,
+    unassignedIssues: unassignedIssueCount,
     guestInquiries: issues.filter((issue) => issue.reporter_type === "guest").length,
   };
 
