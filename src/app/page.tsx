@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getDashboardData, type ActivityItem, type DashboardWorkItem } from "@/lib/queries";
+import { getDashboardData, type ActivityItem } from "@/lib/queries";
 import {
   CleaningStatusBadge,
   IssueStatusBadge,
@@ -11,12 +11,25 @@ import { getRoomDisplayStatus, type RoomDisplayStatus } from "@/lib/roomDisplayS
 import {
   formatBuffer,
   formatDateHeader,
-  formatRelative,
   formatTime,
   relativeOperationDay,
 } from "@/lib/format";
-import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
-import type { CleaningTask, Room } from "@/lib/types";
+import {
+  ISSUE_CATEGORY_LABEL,
+  cleaningNextActionLabel,
+  issueNextActionLabel,
+} from "@/lib/labels";
+import type { Room } from "@/lib/types";
+import {
+  WORK_TONE_CLASSES,
+  assigneeName,
+  workActionLabel,
+  workAssigneeName,
+  workBadge,
+  workHref,
+  workSummary,
+  workTone,
+} from "@/lib/workItemPresentation";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityDrawer } from "@/components/dashboard/ActivityDrawer";
 import { CrewStatusCard } from "@/components/crew/CrewStatusCard";
@@ -34,34 +47,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-type WorkTone = "danger" | "warning" | "info";
-
-const WORK_TONE_CLASSES: Record<
-  WorkTone,
-  { card: string; icon: string; badge: string; button: string }
-> = {
-  danger: {
-    card: "border-danger-border bg-danger-bg/45",
-    icon: "bg-danger-bg text-danger-text",
-    badge: "bg-danger-bg text-danger-text",
-    button:
-      "border-danger-border bg-card text-danger-text hover:bg-danger-bg",
-  },
-  warning: {
-    card: "border-warning-border bg-warning-bg/45",
-    icon: "bg-warning-bg text-warning-text",
-    badge: "bg-warning-bg text-warning-text",
-    button:
-      "border-warning-border bg-card text-warning-text hover:bg-warning-bg",
-  },
-  info: {
-    card: "border-info-border bg-info-bg/40",
-    icon: "bg-info-bg text-info-text",
-    badge: "bg-info-bg text-info-text",
-    button: "border-info-border bg-card text-info-text hover:bg-info-bg",
-  },
-};
-
 function nextScheduleText(room: Room, displayStatus: RoomDisplayStatus): string {
   if (displayStatus === "occupied") {
     return room.checkout_at
@@ -73,39 +58,6 @@ function nextScheduleText(room: Room, displayStatus: RoomDisplayStatus): string 
   return `${relativeOperationDay(room.next_checkin_at)} ${formatTime(
     new Date(room.next_checkin_at)
   )} 체크인`;
-}
-
-function workTone(item: DashboardWorkItem): WorkTone {
-  if (item.priorityTier <= 2) return "danger";
-  if (item.priorityTier === 3) return "warning";
-  return "info";
-}
-
-function workBadge(item: DashboardWorkItem): string {
-  if (item.kind === "issue") {
-    return item.issue?.urgency === "urgent" ? "긴급 이슈" : "운영 이슈";
-  }
-  if (item.priorityTier === 0) return "체크인 임박";
-  if (item.priorityTier === 2) return formatBuffer(item.priority?.bufferMinutes ?? null);
-  if (item.task?.status === "inspection") return "검수 대기";
-  if (item.task?.status === "unassigned") return "미배정";
-  return "청소 작업";
-}
-
-function workSummary(item: DashboardWorkItem): string {
-  if (item.kind === "issue") return item.issue?.description ?? "이슈 내용 없음";
-  if (!item.room.next_checkin_at) return "다음 체크인 일정 없음";
-  return `체크인 ${formatRelative(item.room.next_checkin_at)}`;
-}
-
-function workHref(item: DashboardWorkItem): string {
-  if (item.kind === "issue") return `/issues/${item.issue!.id}`;
-  return `/cleaning/${item.task!.id}`;
-}
-
-function assigneeName(task: CleaningTask | null) {
-  if (!task) return "-";
-  return task.assignee?.name ?? "미배정";
 }
 
 export default async function DashboardPage({
@@ -125,9 +77,7 @@ export default async function DashboardPage({
     for (const [key, value] of Object.entries(extra)) params.set(key, value);
     return `${path}?${params.toString()}`;
   };
-  const priorityHref = filterQueryString
-    ? `/?${filterQueryString}#priority-work`
-    : "/#priority-work";
+  const priorityHref = withFilter("/priority");
 
   const {
     summary,
@@ -211,12 +161,13 @@ export default async function DashboardPage({
         />
       </section>
 
-      <section id="priority-work" className="scroll-mt-6">
+      <section>
         <SectionHeading
           icon={<IssueIcon className="h-4 w-4" />}
           title="긴급 작업"
           description="청소와 운영 이슈를 하나의 우선순위로 정렬한 Top 4"
           count={summary.immediate}
+          href={priorityHref}
         />
 
         {topWorkItems.length > 0 ? (
@@ -253,17 +204,13 @@ export default async function DashboardPage({
                   </div>
                   <div className="mt-3 flex items-center justify-between gap-3">
                     <span className="truncate text-xs text-subtext">
-                      {item.kind === "cleaning"
-                        ? assigneeName(item.task)
-                        : item.issue?.assignee?.name ?? "담당자 미배정"}
+                      {workAssigneeName(item)}
                     </span>
                     <Link
                       href={workHref(item)}
                       className={`inline-flex h-8 shrink-0 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition-colors ${tone.button}`}
                     >
-                      {item.kind === "cleaning" && item.task?.status === "unassigned"
-                        ? "배정하기"
-                        : "확인하기"}
+                      {workActionLabel(item)}
                     </Link>
                   </div>
                 </article>
@@ -295,7 +242,6 @@ export default async function DashboardPage({
                 <th className="px-4 py-3 font-medium">운영 상태</th>
                 <th className="px-4 py-3 font-medium">다음 일정</th>
                 <th className="px-4 py-3 font-medium">담당자</th>
-                <th className="w-24 px-4 py-3 font-medium"><span className="sr-only">액션</span></th>
               </tr>
             </thead>
             <tbody>
@@ -326,11 +272,10 @@ export default async function DashboardPage({
                     <td className="px-4 py-3"><RoomStatusBadge status={displayStatus} /></td>
                     <td className="px-4 py-3 text-subtext">{nextScheduleText(room, displayStatus)}</td>
                     <td className="px-4 py-3 text-subtext">{assigneeName(task)}</td>
-                    <td className="px-4 py-3 text-right"><RowLink href={`/rooms/${room.id}`} label="객실 보기" /></td>
                   </ClickableTableRow>
                 );
               })}
-              {roomsByPriority.length === 0 && <EmptyTable colSpan={5} text="객실이 없습니다." />}
+              {roomsByPriority.length === 0 && <EmptyTable colSpan={4} text="객실이 없습니다." />}
             </tbody>
           </table>
         </div>
@@ -369,18 +314,12 @@ export default async function DashboardPage({
                   <td className="px-4 py-3 text-subtext">{assigneeName(task)}</td>
                   <td className="px-4 py-3"><RiskBadge level={priority.riskLevel} label={formatBuffer(priority.bufferMinutes)} /></td>
                   <td className="px-4 py-3 text-right">
-                    <RowLink
-                      href={`/cleaning/${task!.id}`}
-                      label={
-                        task!.status === "unassigned"
-                          ? "배정하기"
-                          : task!.status === "inspection"
-                            ? "검수하기"
-                            : task!.status === "done"
-                              ? "상세보기"
-                              : "확인하기"
-                      }
-                    />
+                    {cleaningNextActionLabel(task!.status) && (
+                      <RowLink
+                        href={`/cleaning/${task!.id}`}
+                        label={cleaningNextActionLabel(task!.status)!}
+                      />
+                    )}
                   </td>
                 </ClickableTableRow>
               ))}
@@ -428,10 +367,12 @@ export default async function DashboardPage({
                   <td className="px-4 py-3"><UrgencyBadge urgency={issue.urgency} /></td>
                   <td className="px-4 py-3"><IssueStatusBadge status={issue.status} /></td>
                   <td className="px-4 py-3 text-right">
-                    <RowLink
-                      href={`/issues/${issue.id}`}
-                      label={!issue.assignee ? "배정하기" : "확인하기"}
-                    />
+                    {issueNextActionLabel(issue.status, Boolean(issue.assignee)) && (
+                      <RowLink
+                        href={`/issues/${issue.id}`}
+                        label={issueNextActionLabel(issue.status, Boolean(issue.assignee))!}
+                      />
+                    )}
                   </td>
                 </ClickableTableRow>
               ))}
@@ -455,11 +396,13 @@ function SectionHeading({
   title,
   description,
   count,
+  href,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   count: number;
+  href?: string;
 }) {
   return (
     <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
@@ -468,7 +411,17 @@ function SectionHeading({
         <h2 className="text-base font-semibold">{title}</h2>
         <span className="rounded-full bg-danger-bg px-2 py-0.5 text-[11px] font-semibold text-danger-text">{count}</span>
       </div>
-      <p className="text-xs text-subtext">{description}</p>
+      <div className="flex items-center gap-3">
+        <p className="text-xs text-subtext">{description}</p>
+        {href && (
+          <Link
+            href={href}
+            className="flex shrink-0 items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
+          >
+            전체 보기 <ArrowRightIcon className="h-3.5 w-3.5" />
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

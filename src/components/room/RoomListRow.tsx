@@ -60,9 +60,6 @@ export function RoomListRow({ item }: { item: RoomOverviewItem }) {
         <span className="text-xs font-medium whitespace-nowrap">{assigneeLine}</span>
       </div>
 
-      <span className="hidden shrink-0 self-center whitespace-nowrap text-xs font-semibold text-primary sm:inline">
-        객실 보기
-      </span>
     </Link>
   );
 }

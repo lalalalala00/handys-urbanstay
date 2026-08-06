@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getRoomsForSelect } from "@/lib/queries";
 import { getSupabaseServerClient } from "@/lib/supabase-server";
+import type { OperationStatus } from "@/lib/types";
 
 export async function GET() {
   try {
@@ -16,14 +17,23 @@ export async function POST(req: Request) {
     branch?: string;
     roomNumber?: string;
     doorLockCode?: string;
+    operationStatus?: OperationStatus;
   };
 
   const branch = body.branch?.trim();
   const roomNumber = body.roomNumber?.trim();
+  const operationStatus = body.operationStatus ?? "blocked";
 
   if (!branch || !roomNumber) {
     return NextResponse.json(
       { error: "지점과 호수를 입력해주세요." },
+      { status: 400 }
+    );
+  }
+
+  if (operationStatus !== "ready" && operationStatus !== "blocked") {
+    return NextResponse.json(
+      { error: "유효한 판매 채널 상태를 선택해주세요." },
       { status: 400 }
     );
   }
@@ -36,6 +46,9 @@ export async function POST(req: Request) {
       branch,
       room_number: roomNumber,
       door_lock_code: body.doorLockCode?.trim() || null,
+      operation_status: operationStatus,
+      operation_note:
+        operationStatus === "blocked" ? "신규 객실 운영 준비 중" : null,
     })
     .select("*")
     .single();

@@ -10,11 +10,11 @@ import {
   IssueStatusAction,
 } from "@/components/issue/IssueActions";
 import { IssueCrewAssignment } from "@/components/issue/IssueCrewAssignment";
-import { IssueManagerAssignment } from "@/components/issue/IssueManagerAssignment";
 import { IssueChat } from "@/components/issue/IssueChat";
 import { RoomModalHeader } from "@/components/common/RoomModalHeader";
 import { ProgressTimeline } from "@/components/common/ProgressTimeline";
 import { ActionPanel, ActionSection } from "@/components/common/ActionPanel";
+import { CrewPhoneSimulator } from "@/components/common/CrewPhoneSimulator";
 import {
   ISSUE_CATEGORY_LABEL,
   REPORTER_TYPE_LABEL,
@@ -42,19 +42,24 @@ export function IssueDetail({
   const suggestedRole = CATEGORY_DEFAULT_ROLE[issue.category];
 
   const managers = staffList.filter((staff) => staff.role === "manager");
+  const defaultManager = room.property?.manager ?? null;
+  const manager = issue.manager ?? defaultManager;
 
-  const defaultManager =
-    managers.find((manager) => manager.branch === room.branch) ?? null;
-
-  const [managerName, setManagerName] = useState<string | null>(
-    defaultManager?.name ?? null
+  const [confirmingCrewName, setConfirmingCrewName] = useState<string | null>(
+    null
   );
 
   return (
     <div className="flex flex-col gap-6">
       <RoomModalHeader
         room={room}
-        operatorName={managerName}
+        managerControl={{
+          managerId: manager?.id ?? null,
+          managerName: manager?.name ?? null,
+          defaultManagerId: defaultManager?.id ?? null,
+          managers,
+          target: { kind: "issue", id: issue.id },
+        }}
         cleaningCrewName={cleaningCrewName}
         issueCrewName={issue.assignee?.name ?? null}
         titleSuffix="이슈"
@@ -171,6 +176,7 @@ export function IssueDetail({
                 assigneeId={issue.assignee_id}
                 staffList={staffList}
                 suggestedRole={suggestedRole}
+                onAssigned={setConfirmingCrewName}
               />
             </ActionSection>
 
@@ -203,24 +209,33 @@ export function IssueDetail({
                 allowedNext={ISSUE_STATUS_NEXT[issue.status]}
               />
             </ActionSection>
-
-            <ActionSection
-              number={4}
-              title="운영 담당자"
-              description="이슈를 최종 관리할 운영 담당자를 지정합니다."
-              complete={issue.status === "done"}
-              summary={`운영 담당자 · ${managerName ?? "미배정"}`}
-            >
-              <IssueManagerAssignment
-                managers={managers}
-                defaultManager={defaultManager}
-                managerName={managerName}
-                onManagerChange={setManagerName}
-              />
-            </ActionSection>
           </ActionPanel>
         </div>
       </div>
+      {confirmingCrewName && (
+        <CrewPhoneSimulator
+          room={room}
+          notificationTitle={`${confirmingCrewName}님, 새 이슈가 배정됐어요`}
+          detail={
+            <>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                {ISSUE_CATEGORY_LABEL[issue.category]} ·{" "}
+                {ISSUE_URGENCY_LABEL[issue.urgency]}
+              </p>
+              <p className="mt-1 line-clamp-2 text-xs text-gray-500 dark:text-gray-400">
+                {issue.description}
+              </p>
+            </>
+          }
+          inProgressTitle="확인 후 처리를 시작하세요"
+          patchUrl={`/api/issues/${issue.id}`}
+          patchBody={{ status: "in_progress" }}
+          successToast="이슈 처리가 시작되었습니다."
+          startLabel="처리 시작"
+          startingLabel="시작하는 중..."
+          onDone={() => setConfirmingCrewName(null)}
+        />
+      )}
     </div>
   );
 }

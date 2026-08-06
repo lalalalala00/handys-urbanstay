@@ -16,8 +16,24 @@ create table staff (
   created_at timestamptz not null default now()
 );
 
+create table properties (
+  id uuid primary key default gen_random_uuid(),
+  name text not null unique,
+  region_id text not null,
+  address text not null,
+  room_count int not null default 0 check (room_count >= 0),
+  manager_id uuid references staff(id),
+  checkin_time time not null default '15:00',
+  checkout_time time not null default '11:00',
+  status text not null default 'preparing'
+    check (status in ('preparing', 'active')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
 create table rooms (
   id uuid primary key default gen_random_uuid(),
+  property_id uuid references properties(id),
   branch text not null,
   room_number text not null,
   occupancy_status text not null default 'vacant'
@@ -71,8 +87,10 @@ create table issues (
 
 create index cleaning_tasks_room_id_idx on cleaning_tasks(room_id);
 create index issues_room_id_idx on issues(room_id);
+create index rooms_property_id_idx on rooms(property_id);
 
 alter table staff enable row level security;
+alter table properties enable row level security;
 alter table rooms enable row level security;
 alter table cleaning_tasks enable row level security;
 alter table issues enable row level security;

@@ -38,8 +38,26 @@ export interface Staff {
   branch: string | null;
 }
 
+export type PropertyStatus = "preparing" | "active";
+
+export interface Property {
+  id: string;
+  name: string;
+  region_id: string;
+  address: string;
+  room_count: number;
+  manager_id: string | null;
+  checkin_time: string;
+  checkout_time: string;
+  status: PropertyStatus;
+  created_at: string;
+  updated_at: string;
+  manager?: Staff | null;
+}
+
 export interface Room {
   id: string;
+  property_id: string | null;
   branch: string;
   room_number: string;
   occupancy_status: OccupancyStatus;
@@ -54,6 +72,7 @@ export interface Room {
   payment_status: PaymentStatus | null;
   payment_amount: number | null;
   door_lock_code: string | null;
+  property?: Property | null;
 }
 
 export interface CleaningTask {
@@ -61,6 +80,7 @@ export interface CleaningTask {
   room_id: string;
   status: CleaningTaskStatus;
   assignee_id: string | null;
+  manager_id: string | null;
   estimated_minutes: number;
   started_at: string | null;
   completed_at: string | null;
@@ -68,6 +88,7 @@ export interface CleaningTask {
   updated_at: string;
   room?: Room;
   assignee?: Staff | null;
+  manager?: Staff | null;
 }
 
 export interface Issue {
@@ -79,12 +100,14 @@ export interface Issue {
   urgency: IssueUrgency;
   status: IssueStatus;
   assignee_id: string | null;
+  manager_id: string | null;
   ai_suggested_category: IssueCategory | null;
   ai_suggested_urgency: IssueUrgency | null;
   created_at: string;
   updated_at: string;
   room?: Room;
   assignee?: Staff | null;
+  manager?: Staff | null;
 }
 
 // Category -> default assignee role, per the report-to-owner mapping in the

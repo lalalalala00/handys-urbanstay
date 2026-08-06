@@ -25,6 +25,7 @@ export async function PATCH(
   const body = (await req.json()) as {
     status?: CleaningTaskStatus;
     assigneeId?: string | null;
+    managerId?: string | null;
   };
 
   const supabase = getSupabaseServerClient();
@@ -74,6 +75,7 @@ export async function PATCH(
     updated_at: new Date().toISOString(),
   };
   if (body.assigneeId !== undefined) update.assignee_id = body.assigneeId;
+  if (body.managerId !== undefined) update.manager_id = body.managerId;
   if (nextStatus === "cleaning" && !current.started_at) {
     update.started_at = new Date().toISOString();
   }
@@ -85,7 +87,9 @@ export async function PATCH(
     .from("cleaning_tasks")
     .update(update)
     .eq("id", id)
-    .select("*, room:rooms(*), assignee:staff(id, name, role)")
+    .select(
+      "*, room:rooms(*), assignee:staff!assignee_id(id, name, role), manager:staff!manager_id(id, name, role)"
+    )
     .single();
 
   if (updateError) {

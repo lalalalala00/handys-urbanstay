@@ -6,7 +6,11 @@ import {
   ISSUE_STATUS_TONE,
 } from "@/components/common/StatusBadges";
 
-import { ISSUE_CATEGORY_LABEL, ISSUE_STATUS_LABEL } from "@/lib/labels";
+import {
+  ISSUE_CATEGORY_LABEL,
+  ISSUE_STATUS_LABEL,
+  issueNextActionLabel,
+} from "@/lib/labels";
 import { formatDateTime } from "@/lib/format";
 import type { IssueStatus } from "@/lib/types";
 import { StatusTabs } from "@/components/common/StatusTabs";
@@ -306,17 +310,15 @@ export default async function IssuesPage({
                     </td>
 
                     <td className="px-4 py-3.5">
-                      <Link
-                        href={`/issues/${issue.id}`}
-                        aria-label="이슈 상세 보기"
-                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-primary hover:underline"
-                      >
-                        {!issue.assignee && issue.status !== "done"
-                          ? "배정하기"
-                          : issue.status === "done"
-                            ? "상세보기"
-                            : "확인하기"}
-                      </Link>
+                      {issueNextActionLabel(issue.status, Boolean(issue.assignee)) && (
+                        <Link
+                          href={`/issues/${issue.id}`}
+                          aria-label={issueNextActionLabel(issue.status, Boolean(issue.assignee))!}
+                          className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-primary hover:underline"
+                        >
+                          {issueNextActionLabel(issue.status, Boolean(issue.assignee))}
+                        </Link>
+                      )}
                     </td>
                   </ClickableTableRow>
                 );

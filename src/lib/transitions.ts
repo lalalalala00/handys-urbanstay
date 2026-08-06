@@ -33,7 +33,7 @@ export const ISSUE_STATUS_NEXT: Record<IssueStatus, IssueStatus[]> = {
   new: ["checking", "assigned"],
   checking: ["assigned"],
   assigned: ["in_progress"],
-  in_progress: ["inspection", "done"],
+  in_progress: ["done"],
   inspection: ["done"],
   done: [],
 };

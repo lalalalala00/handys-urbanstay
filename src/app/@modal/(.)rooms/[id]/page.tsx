@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getRoomDetail } from "@/lib/queries";
+import { getRoomDetail, getStaffList } from "@/lib/queries";
 import { RoomDetail } from "@/components/room/RoomDetail";
 import { Modal } from "@/components/common/Modal";
 
@@ -16,12 +16,15 @@ export default async function RoomModal({
   const { view } = await searchParams;
 
   let detail;
+  let staffList;
   try {
-    detail = await getRoomDetail(id);
+    [detail, staffList] = await Promise.all([getRoomDetail(id), getStaffList()]);
   } catch {
     notFound();
   }
   if (!detail.room) notFound();
+
+  const managers = staffList.filter((s) => s.role === "manager");
 
   return (
     <Modal wide>
@@ -30,7 +33,7 @@ export default async function RoomModal({
         task={detail.task}
         issues={detail.issues}
         priority={detail.priority}
-        operator={detail.operator}
+        managers={managers}
         activity={detail.activity}
         compact={view === "compact"}
       />

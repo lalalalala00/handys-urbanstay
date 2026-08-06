@@ -11,11 +11,13 @@ export function IssueCrewAssignment({
   assigneeId,
   staffList,
   suggestedRole,
+  onAssigned,
 }: {
   issueId: string;
   assigneeId: string | null;
   staffList: Staff[];
   suggestedRole: StaffRole;
+  onAssigned?: (crewName: string) => void;
 }) {
   const router = useRouter();
   const showToast = useToast();
@@ -49,6 +51,8 @@ export function IssueCrewAssignment({
 
       showToast("크루가 배정되었습니다.");
       router.refresh();
+      const assignedStaff = sortedStaff.find((staff) => staff.id === selectedAssignee);
+      if (assignedStaff) onAssigned?.(assignedStaff.name);
     } finally {
       setPending(false);
     }

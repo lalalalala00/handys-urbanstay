@@ -8,7 +8,7 @@ import {
   ROOM_DISPLAY_STATUS_RANK,
   type RoomDisplayStatus,
 } from "./roomDisplayStatus";
-import type { CleaningTask, Issue, Room, Staff } from "./types";
+import type { CleaningTask, Issue, Property, Room, Staff } from "./types";
 
 const CLEANING_EVENT_LABEL: Record<CleaningTask["status"], string> = {
   unassigned: "크루 배정 요청",
@@ -29,7 +29,7 @@ const CLEANING_EVENT_CATEGORY: Record<CleaningTask["status"], "assignment" | "cl
 const ISSUE_EVENT_LABEL: Record<Issue["status"], string> = {
   new: "이상 신고 접수",
   checking: "이상 신고 확인 중",
-  assigned: "이상 신고 담당자 배정",
+  assigned: "이상 신고 크루 배정",
   in_progress: "이상 신고 처리 중",
   inspection: "이상 신고 검수 대기",
   done: "이상 신고 처리 완료",
@@ -72,19 +72,19 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
     roomsQuery,
     supabase
       .from("cleaning_tasks")
-      .select("*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)")
+      .select("*, room:rooms(id, branch, room_number), assignee:staff!assignee_id(id, name, role)")
       .order("created_at", { ascending: false }),
     supabase
       .from("issues")
       .select(
-        "*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)"
+        "*, room:rooms(id, branch, room_number), assignee:staff!assignee_id(id, name, role)"
       )
       .neq("status", "done")
       .order("created_at", { ascending: true }),
     supabase
       .from("issues")
       .select(
-        "*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)"
+        "*, room:rooms(id, branch, room_number), assignee:staff!assignee_id(id, name, role)"
       )
       .order("updated_at", { ascending: false })
       .limit(50),
@@ -252,6 +252,64 @@ export async function getDashboardData(filter?: { branch?: string; region?: stri
   };
 }
 
+export async function getPriorityWorkItems(filter?: { branch?: string; region?: string }) {
+  const supabase = getSupabaseServerClient();
+
+  const branch = filter?.branch;
+  const regionBranches = !branch && filter?.region ? branchesInRegion(filter.region) : [];
+
+  let roomsQuery = supabase.from("rooms").select("*");
+  if (branch) {
+    roomsQuery = roomsQuery.eq("branch", branch);
+  } else if (regionBranches.length > 0) {
+    roomsQuery = roomsQuery.in("branch", regionBranches);
+  }
+
+  const [roomsRes, tasksRes, issuesRes] = await Promise.all([
+    roomsQuery,
+    supabase
+      .from("cleaning_tasks")
+      .select("*, room:rooms(id, branch, room_number), assignee:staff!assignee_id(id, name, role)")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("issues")
+      .select(
+        "*, room:rooms(id, branch, room_number), assignee:staff!assignee_id(id, name, role)"
+      )
+      .neq("status", "done")
+      .order("created_at", { ascending: true }),
+  ]);
+
+  const firstError = roomsRes.error || tasksRes.error || issuesRes.error;
+  if (firstError) throw new Error(firstError.message);
+
+  const rooms = (roomsRes.data ?? []) as Room[];
+  const roomIds = new Set(rooms.map((r) => r.id));
+  const tasks = ((tasksRes.data ?? []) as CleaningTask[]).filter((t) =>
+    roomIds.has(t.room_id)
+  );
+  const issues = ((issuesRes.data ?? []) as Issue[])
+    .filter((i) => roomIds.has(i.room_id))
+    .sort(compareIssues);
+
+  const latestTaskByRoom = new Map<string, CleaningTask>();
+  for (const task of tasks) {
+    if (!latestTaskByRoom.has(task.room_id)) {
+      latestTaskByRoom.set(task.room_id, task);
+    }
+  }
+
+  const roomsWithPriority = rooms.map((room) => {
+    const task = latestTaskByRoom.get(room.id);
+    const priority = calcRoomPriority(room, task);
+    return { room, task: task ?? null, priority };
+  });
+
+  const roomById = new Map(rooms.map((room) => [room.id, room]));
+
+  return buildDashboardWorkItems(roomsWithPriority, issues, roomById);
+}
+
 type RoomPriorityItem = {
   room: Room;
   task: CleaningTask | null;
@@ -376,7 +434,7 @@ export async function getCleaningTasksList(filter?: { branch?: string; region?: 
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("cleaning_tasks")
-    .select("*, room:rooms(*), assignee:staff(id, name, role)")
+    .select("*, room:rooms(*), assignee:staff!assignee_id(id, name, role)")
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
@@ -416,7 +474,9 @@ export async function getCleaningTaskById(
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("cleaning_tasks")
-    .select("*, room:rooms(*), assignee:staff(id, name, role)")
+    .select(
+      "*, room:rooms(*, property:properties(id, manager_id, manager:staff(id, name, role))), assignee:staff!assignee_id(id, name, role), manager:staff!manager_id(id, name, role)"
+    )
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
@@ -424,7 +484,7 @@ export async function getCleaningTaskById(
 
   const { data: openIssues, error: openIssuesError } = await supabase
     .from("issues")
-    .select("*, assignee:staff(id, name, role)")
+    .select("*, assignee:staff!assignee_id(id, name, role)")
     .eq("room_id", task.room_id)
     .neq("status", "done");
   if (openIssuesError) throw new Error(openIssuesError.message);
@@ -440,7 +500,7 @@ export async function getRoomCleaningCrew(roomId: string): Promise<Staff | null>
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("cleaning_tasks")
-    .select("assignee:staff(id, name, role, branch)")
+    .select("assignee:staff!assignee_id(id, name, role, branch)")
     .eq("room_id", roomId)
     .order("created_at", { ascending: false })
     .limit(1)
@@ -456,7 +516,7 @@ export async function getIssuesList(filter?: { branch?: string; region?: string 
   const { data, error } = await supabase
     .from("issues")
     .select(
-      "*, room:rooms(id, branch, room_number, next_checkin_at), assignee:staff(id, name, role)"
+      "*, room:rooms(id, branch, room_number, next_checkin_at), assignee:staff!assignee_id(id, name, role)"
     )
     .order("created_at", { ascending: false });
 
@@ -478,7 +538,9 @@ export async function getIssueById(id: string) {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("issues")
-    .select("*, room:rooms(*), assignee:staff(id, name, role)")
+    .select(
+      "*, room:rooms(*, property:properties(id, manager_id, manager:staff(id, name, role))), assignee:staff!assignee_id(id, name, role), manager:staff!manager_id(id, name, role)"
+    )
     .eq("id", id)
     .single();
   if (error) throw new Error(error.message);
@@ -509,15 +571,19 @@ export async function getRoomDetail(id: string) {
   const supabase = getSupabaseServerClient();
 
   const [roomRes, allTasksRes, allIssuesRes] = await Promise.all([
-    supabase.from("rooms").select("*").eq("id", id).single(),
+    supabase
+      .from("rooms")
+      .select("*, property:properties(id, manager_id, manager:staff(id, name, role))")
+      .eq("id", id)
+      .single(),
     supabase
       .from("cleaning_tasks")
-      .select("*, assignee:staff(id, name, role)")
+      .select("*, assignee:staff!assignee_id(id, name, role)")
       .eq("room_id", id)
       .order("created_at", { ascending: false }),
     supabase
       .from("issues")
-      .select("*, assignee:staff(id, name, role)")
+      .select("*, assignee:staff!assignee_id(id, name, role)")
       .eq("room_id", id)
       .order("created_at", { ascending: false }),
   ]);
@@ -534,7 +600,6 @@ export async function getRoomDetail(id: string) {
     .sort(compareIssues);
 
   const priority = calcRoomPriority(room, task ?? undefined);
-  const operator = issues.find((i) => i.assignee)?.assignee ?? null;
 
   const activity: RoomActivityItem[] = [
     ...allTasks.map((t) => {
@@ -579,7 +644,6 @@ export async function getRoomDetail(id: string) {
     task,
     issues,
     priority,
-    operator,
     activity,
   };
 }
@@ -617,7 +681,7 @@ export async function getRoomsOverview(filter?: { branch?: string; region?: stri
     roomsQuery,
     supabase
       .from("cleaning_tasks")
-      .select("*, assignee:staff(id, name, role)")
+      .select("*, assignee:staff!assignee_id(id, name, role)")
       .order("created_at", { ascending: false }),
     supabase.from("issues").select("room_id").neq("status", "done"),
   ]);
@@ -709,4 +773,14 @@ export async function getStaffList() {
     .order("name");
   if (error) throw new Error(error.message);
   return data ?? [];
+}
+
+export async function getPropertiesList(): Promise<Property[]> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("properties")
+    .select("*, manager:staff(id, name, role, branch)")
+    .order("created_at", { ascending: false });
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Property[];
 }

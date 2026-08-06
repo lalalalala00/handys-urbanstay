@@ -14,7 +14,7 @@
 -- (e.g. to refresh the now()-relative timestamps) without manually
 -- resetting the DB.
 
-truncate table issues, cleaning_tasks, rooms, staff restart identity cascade;
+truncate table issues, cleaning_tasks, rooms, properties, staff restart identity cascade;
 
 insert into staff (name, role, branch) values
   ('김민준', 'cleaner', null),
@@ -68,6 +68,22 @@ insert into staff (name, role, branch) values
   ('서예은', 'manager', '마포 브릭하우스'),
   ('최민아', 'manager', '선셋베이 해운대');
 
+insert into properties (
+  name, region_id, address, room_count, manager_id, checkin_time, checkout_time, status
+) values
+  ('노블리안 강남', 'seoul-gangnam', '서울 강남구 테헤란로 92길 12', 4,
+   (select id from staff where name = '정하은'), '15:00', '11:00', 'active'),
+  ('강남 스퀘어 스테이', 'seoul-gangnam', '서울 강남구 테헤란로 87길 5', 4,
+   (select id from staff where name = '이지훈'), '15:00', '11:00', 'active'),
+  ('홍대 하이브', 'seoul-mapo', '서울 마포구 어울마당로 45', 3,
+   (select id from staff where name = '윤지호'), '15:00', '11:00', 'active'),
+  ('마포 브릭하우스', 'seoul-mapo', '서울 마포구 월드컵로 20길 8', 3,
+   (select id from staff where name = '서예은'), '15:00', '11:00', 'active'),
+  ('해운대 오션하우스', 'busan-haeundae', '부산 해운대구 해운대로 620', 3,
+   (select id from staff where name = '배영호'), '15:00', '11:00', 'active'),
+  ('선셋베이 해운대', 'busan-haeundae', '부산 해운대구 달맞이길 65', 2,
+   (select id from staff where name = '최민아'), '15:00', '11:00', 'active');
+
 insert into rooms (
   branch, room_number, occupancy_status, operation_status, operation_note, checkout_at, next_checkin_at,
   guest_name, guest_phone, guest_count, nights, payment_status, payment_amount, door_lock_code
@@ -119,3 +135,8 @@ values
   ((select id from rooms where branch = '강남 스퀘어 스테이' and room_number = '1301'), 'other',
    '체크인 안내 문자가 오지 않았다는 문의였습니다.', 'guest', 'low', 'done',
    (select id from staff where name = '배영호'), null, null);
+
+update rooms
+set property_id = properties.id
+from properties
+where rooms.branch = properties.name;

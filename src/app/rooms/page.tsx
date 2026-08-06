@@ -96,10 +96,10 @@ export default async function RoomsOverviewPage({
           </div>
 
           <Link
-            href={`/rooms/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
+            href="/properties/new"
             className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
           >
-            객실 등록
+            숙소 등록
           </Link>
         </div>
       </header>

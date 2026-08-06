@@ -64,7 +64,7 @@ export async function POST(
       status: "unassigned",
       estimated_minutes: 45,
     })
-    .select("*, room:rooms(*), assignee:staff(id, name, role)")
+    .select("*, room:rooms(*), assignee:staff!assignee_id(id, name, role)")
     .single();
 
   if (taskError) {

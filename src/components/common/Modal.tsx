@@ -9,6 +9,22 @@ export function useModalClose() {
   return useContext(ModalCloseContext);
 }
 
+export function ModalCloseButton() {
+  const close = useModalClose();
+  if (!close) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={close}
+      aria-label="닫기"
+      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-gray-500 hover:bg-black/5 dark:hover:bg-white/10"
+    >
+      ✕
+    </button>
+  );
+}
+
 export function Modal({
   children,
   wide = false,

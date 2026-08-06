@@ -10,7 +10,7 @@ import { CopyButton } from "@/components/common/CopyButton";
 import { AIIssueSummary } from "@/components/issue/AIIssueSummary";
 import { RoomModalHeader } from "@/components/common/RoomModalHeader";
 import { CheckoutButton } from "@/components/room/CheckoutButton";
-import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
+import { ISSUE_CATEGORY_LABEL, issueNextActionLabel } from "@/lib/labels";
 import {
   formatDateTimeWithDay,
   formatDuration,
@@ -35,7 +35,7 @@ export function RoomDetail({
   task,
   issues,
   priority,
-  operator,
+  managers,
   activity,
   compact = false,
 }: {
@@ -43,10 +43,11 @@ export function RoomDetail({
   task: CleaningTask | null;
   issues: Issue[];
   priority: RoomPriority;
-  operator: Staff | null;
+  managers: Staff[];
   activity: RoomActivityItem[];
   compact?: boolean;
 }) {
+  const defaultManager = room.property?.manager ?? null;
   const checkedIn = room.occupancy_status === "occupied";
   const hasGuest = Boolean(room.guest_name);
   const isCombinedView = compact;
@@ -68,7 +69,13 @@ export function RoomDetail({
       <RoomModalHeader
         room={room}
         task={task}
-        operatorName={operator?.name ?? null}
+        managerControl={{
+          managerId: defaultManager?.id ?? null,
+          managerName: defaultManager?.name ?? null,
+          defaultManagerId: defaultManager?.id ?? null,
+          managers,
+          target: { kind: "property", id: room.property?.id ?? "" },
+        }}
         cleaningCrewName={task?.assignee?.name ?? null}
         issueCrewName={
           issues.length > 0
@@ -325,8 +332,8 @@ function CleaningStatusCard({
         </>
       ) : (
         <EmptyState
-          title="등록된 청소 작업이 없습니다."
-          description="청소 작업이 생성되면 담당 크루와 진행 상태를 확인할 수 있습니다."
+          title="진행할 청소 작업이 없습니다."
+          description="체크아웃 처리 시 청소 작업이 자동으로 생성됩니다."
         />
       )}
     </Card>
@@ -391,9 +398,11 @@ function IssueListCard({ issues }: { issues: Issue[] }) {
                     </span>
                   </div>
 
-                  <span className="text-xs font-medium text-primary">
-                    확인하기
-                  </span>
+                  {issueNextActionLabel(issue.status, Boolean(issue.assignee)) && (
+                    <span className="text-xs font-medium text-primary">
+                      {issueNextActionLabel(issue.status, Boolean(issue.assignee))}
+                    </span>
+                  )}
                 </div>
               </Link>
             </li>

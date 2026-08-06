@@ -11,11 +11,16 @@ import { CleaningTaskActions } from "@/components/cleaning/CleaningTaskActions";
 import { CleaningCrewAssignment } from "@/components/cleaning/CleaningCrewAssignment";
 import { CleaningCrewReassignment } from "@/components/cleaning/CleaningCrewReassignment";
 import { CleaningInspectionPanel } from "@/components/cleaning/CleaningInspectionPanel";
-import { CrewPhoneSimulator } from "@/components/cleaning/CrewPhoneSimulator";
+import { CrewPhoneSimulator } from "@/components/common/CrewPhoneSimulator";
 import { RoomModalHeader } from "@/components/common/RoomModalHeader";
 import { ActionPanel, ActionSection } from "@/components/common/ActionPanel";
 import { CLEANING_STATUS_LABEL } from "@/lib/labels";
-import { formatBuffer, formatDateTime, minutesUntil, summarizeNames } from "@/lib/format";
+import {
+  formatBuffer,
+  formatDateTime,
+  minutesUntil,
+  summarizeNames,
+} from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";
 import { CLEANING_TASK_NEXT, CLEANING_STEPS } from "@/lib/transitions";
 import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";
@@ -43,27 +48,32 @@ export function CleaningTaskDetail({
   const priority = calcRoomPriority(room, task);
   const checkinMinutes = minutesUntil(room.next_checkin_at);
   const manualAllowedNext = CLEANING_TASK_NEXT[task.status].filter(
-    (next) => !AUTO_HANDLED_TRANSITIONS[task.status]?.includes(next)
+    (next) => !AUTO_HANDLED_TRANSITIONS[task.status]?.includes(next),
   );
-  const defaultManager =
-    managers.find((manager) => manager.branch === room.branch) ?? null;
-  const [managerName, setManagerName] = useState<string | null>(
-    defaultManager?.name ?? null
-  );
+  const defaultManager = room.property?.manager ?? null;
+  const manager = task.manager ?? defaultManager;
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [confirmingCrewName, setConfirmingCrewName] = useState<string | null>(
-    null
+    null,
   );
   return (
     <div className="flex flex-col gap-6">
       <RoomModalHeader
         room={room}
         task={task}
-        operatorName={managerName}
+        managerControl={{
+          managerId: manager?.id ?? null,
+          managerName: manager?.name ?? null,
+          defaultManagerId: defaultManager?.id ?? null,
+          managers,
+          target: { kind: "cleaningTask", id: task.id },
+        }}
         cleaningCrewName={task.assignee?.name ?? null}
         issueCrewName={
           roomOpenIssues.length > 0
-            ? summarizeNames(roomOpenIssues.map((issue) => issue.assignee?.name))
+            ? summarizeNames(
+                roomOpenIssues.map((issue) => issue.assignee?.name),
+              )
             : undefined
         }
         titleSuffix="청소"
@@ -107,7 +117,7 @@ export function CleaningTaskDetail({
                 {formatDateTime(room.next_checkin_at)}
               </Field>
               <Field label="청소 시작">{formatDateTime(task.started_at)}</Field>
-              <Field label="검수 담당자"> {managerName ?? "미배정"} </Field>
+              <Field label="검수 담당자"> {manager?.name ?? "미배정"} </Field>
             </div>
           </section>
           {task.status === "unassigned" && (
@@ -187,20 +197,17 @@ export function CleaningTaskDetail({
                 task.status === "inspection"
                   ? "운영자 검수"
                   : task.status === "done"
-                  ? "검수 완료"
-                  : "청소 완료 처리"
+                    ? "검수 완료"
+                    : "청소 완료 처리"
               }
               description={getInspectionDescription(task.status)}
               complete={task.status === "done"}
-              summary={`검수 완료 · ${managerName ?? "미배정"}`}
+              summary={`검수 완료 · ${manager?.name ?? "미배정"}`}
             >
               <CleaningInspectionPanel
                 taskId={task.id}
                 status={task.status}
-                managers={managers}
-                defaultManager={defaultManager}
-                managerName={managerName}
-                onManagerChange={setManagerName}
+                managerName={manager?.name ?? null}
                 photoUrl={photoUrl}
                 onPhotoChange={setPhotoUrl}
               />
@@ -210,10 +217,22 @@ export function CleaningTaskDetail({
       </div>
       {confirmingCrewName && (
         <CrewPhoneSimulator
-          taskId={task.id}
-          crewName={confirmingCrewName}
           room={room}
-          estimatedMinutes={task.estimated_minutes}
+          notificationTitle={`${confirmingCrewName}님, 새 청소가 배정됐어요`}
+          detail={
+            <>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                예상 소요 {task.estimated_minutes}분
+              </p>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                다음 체크인 {formatDateTime(room.next_checkin_at)}
+              </p>
+            </>
+          }
+          inProgressTitle="현장에 도착하면 청소를 시작하세요"
+          patchUrl={`/api/cleaning-tasks/${task.id}`}
+          patchBody={{ status: "cleaning" }}
+          successToast="청소가 시작되었습니다."
           onDone={() => setConfirmingCrewName(null)}
         />
       )}
@@ -269,11 +288,11 @@ function CleaningScheduleSummary({
           <h2 className="text-sm font-semibold">일정 요약</h2>
           <p className="mt-2 text-sm leading-6 text-foreground/80">
             다음 체크인은
-            <strong className="font-semibold text-foreground">
+            <strong className="font-semibold text-foreground ml-1">
               {formatDateTime(room.next_checkin_at)}
             </strong>
             이며, 예상 청소 시간은
-            <strong className="font-semibold text-foreground">
+            <strong className="font-semibold text-foreground ml-1">
               {task.estimated_minutes}분
             </strong>
             입니다.

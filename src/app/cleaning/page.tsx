@@ -7,6 +7,7 @@ import {
 } from "@/components/common/StatusBadges";
 
 import { formatBuffer, formatDateTime, formatRelative } from "@/lib/format";
+import { cleaningNextActionLabel } from "@/lib/labels";
 import type { CleaningTaskStatus } from "@/lib/types";
 import { StatusTabs } from "@/components/common/StatusTabs";
 import { ClickableTableRow } from "@/components/common/ClickableTableRow";
@@ -102,15 +103,15 @@ export default async function CleaningTasksPage({
           </div>
 
           <p className="mt-1 text-xs text-subtext">
-            객실별 청소 일정과 배정 현황을 확인합니다.
+            체크아웃 시 자동 생성된 청소 작업의 일정과 배정 현황을 확인합니다.
           </p>
         </div>
 
         <Link
-          href={`/cleaning/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
-          className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
+          href={cleaningIssueHref(baseParams)}
+          className="flex h-9 items-center justify-center rounded-lg border border-card-border bg-card px-4 text-sm font-medium transition hover:bg-black/[0.03] dark:hover:bg-white/5"
         >
-          청소 작업 등록
+          청소 문제 접수
         </Link>
       </header>
 
@@ -285,19 +286,15 @@ export default async function CleaningTasksPage({
                     </td>
 
                     <td className="px-4 py-3.5">
-                      <Link
-                        href={`/cleaning/${task.id}`}
-                        aria-label="청소 작업 상세 보기"
-                        className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-primary hover:underline"
-                      >
-                        {task.status === "unassigned"
-                          ? "배정하기"
-                          : task.status === "inspection"
-                            ? "검수하기"
-                            : task.status === "done"
-                              ? "상세보기"
-                              : "확인하기"}
-                      </Link>
+                      {cleaningNextActionLabel(task.status) && (
+                        <Link
+                          href={`/cleaning/${task.id}`}
+                          aria-label={cleaningNextActionLabel(task.status)!}
+                          className="inline-flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-primary hover:underline"
+                        >
+                          {cleaningNextActionLabel(task.status)}
+                        </Link>
+                      )}
                     </td>
                   </ClickableTableRow>
                 );
@@ -316,6 +313,13 @@ export default async function CleaningTasksPage({
       </section>
     </div>
   );
+}
+
+function cleaningIssueHref(baseParams: URLSearchParams) {
+  const params = new URLSearchParams(baseParams);
+  params.set("category", "cleaning");
+  params.set("reporter", "manager");
+  return `/issues/new?${params.toString()}`;
 }
 
 function CleaningAlertBanner({
@@ -404,13 +408,13 @@ function EmptyCleaningState({
       <p className="mt-3 text-sm font-medium">
         {activeStatus
           ? `${activeLabel} 상태의 청소 작업이 없습니다.`
-          : "등록된 청소 작업이 없습니다."}
+          : "생성된 청소 작업이 없습니다."}
       </p>
 
       <p className="mt-1 text-xs text-subtext">
         {activeStatus
           ? "다른 상태를 선택해 전체 작업을 확인할 수 있습니다."
-          : "청소 작업이 생성되면 이곳에 표시됩니다."}
+          : "체크아웃 처리 시 청소 작업이 자동으로 생성됩니다."}
       </p>
     </div>
   );

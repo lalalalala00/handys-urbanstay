@@ -44,11 +44,37 @@ export const CLEANING_STATUS_LABEL: Record<CleaningTaskStatus, string> = {
 export const ISSUE_STATUS_LABEL: Record<IssueStatus, string> = {
   new: "신규 접수",
   checking: "접수 확인",
-  assigned: "담당자 배정",
+  assigned: "크루 배정",
   in_progress: "처리 중",
   inspection: "완료 확인",
   done: "완료",
 };
+
+export function cleaningNextActionLabel(
+  status: CleaningTaskStatus
+): string | null {
+  switch (status) {
+    case "unassigned":
+      return "배정하기";
+    case "assigned":
+    case "cleaning":
+      return "진행 확인";
+    case "inspection":
+      return "검수하기";
+    case "done":
+      return null;
+  }
+}
+
+export function issueNextActionLabel(
+  status: IssueStatus,
+  hasAssignee: boolean
+): string | null {
+  if (status === "done") return null;
+  if (!hasAssignee) return "배정하기";
+  if (status === "assigned" || status === "in_progress") return "처리하기";
+  return "확인하기";
+}
 
 export const ISSUE_CATEGORY_LABEL: Record<IssueCategory, string> = {
   cleaning: "청소 불량",

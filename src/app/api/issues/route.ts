@@ -41,7 +41,7 @@ export async function POST(req: Request) {
       ai_suggested_category: body.aiSuggestedCategory ?? null,
       ai_suggested_urgency: body.aiSuggestedUrgency ?? null,
     })
-    .select("*, room:rooms(id, branch, room_number), assignee:staff(id, name, role)")
+    .select("*, room:rooms(id, branch, room_number), assignee:staff!assignee_id(id, name, role)")
     .single();
 
   if (error) {

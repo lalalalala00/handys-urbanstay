@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { BranchSelect } from "@/components/common/BranchSelect";
 import type { OccupancyStatus, OperationStatus } from "@/lib/types";
 
 export interface RoomOption {
@@ -39,27 +38,41 @@ export function BranchRoomPicker({
   const roomsInBranch = branch
     ? rooms.filter((r) => r.branch === branch)
     : [];
+  const branches = [...new Set(rooms.map((room) => room.branch))].sort((a, b) =>
+    a.localeCompare(b, "ko")
+  );
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row">
-      <label className="flex flex-1 flex-col gap-1 text-sm">
-        지점
-        <BranchSelect value={branch} onChange={selectBranch} />
+    <div className="grid gap-4 sm:grid-cols-2">
+      <label className="flex flex-col gap-1.5 text-xs font-medium">
+        숙소
+        <select
+          className="h-10 rounded-lg border border-card-border bg-background px-3 text-sm font-normal outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+          value={branch}
+          onChange={(event) => selectBranch(event.target.value)}
+        >
+          <option value="">숙소 선택</option>
+          {branches.map((branchName) => (
+            <option key={branchName} value={branchName}>
+              {branchName}
+            </option>
+          ))}
+        </select>
       </label>
 
-      <label className="flex flex-1 flex-col gap-1 text-sm">
+      <label className="flex flex-col gap-1.5 text-xs font-medium">
         객실
         <select
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/10 disabled:opacity-40"
+          className="h-10 rounded-lg border border-card-border bg-background px-3 text-sm font-normal outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10 disabled:opacity-40"
           value={value}
           disabled={!branch}
           onChange={(e) => onChange(e.target.value)}
         >
           <option value="">
             {!branch
-              ? "지점을 먼저 선택하세요"
+              ? "숙소를 먼저 선택하세요"
               : roomsInBranch.length === 0
-                ? "이 지점에는 등록된 객실이 없습니다"
+                ? "이 숙소에는 등록된 객실이 없습니다"
                 : "객실 선택"}
           </option>
           {roomsInBranch.map((r) => (

@@ -95,3 +95,15 @@ a {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* Keep every scroll area functional while hiding visual scrollbar chrome. */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}

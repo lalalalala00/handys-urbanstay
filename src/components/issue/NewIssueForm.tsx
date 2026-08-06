@@ -18,6 +18,7 @@ const REPORTER_TYPES = [
   { value: "manager", label: "운영 관리자" },
   { value: "facility", label: "시설 담당자" },
 ] as const;
+type ReporterType = (typeof REPORTER_TYPES)[number]["value"];
 
 interface Suggestion {
   category: IssueCategory;
@@ -28,16 +29,25 @@ interface Suggestion {
 export function NewIssueForm({
   rooms,
   initialBranch,
+  initialCategory,
+  initialReporter,
 }: {
   rooms: RoomOption[];
   initialBranch?: string;
+  initialCategory?: string;
+  initialReporter?: string;
 }) {
   const router = useRouter();
+  const defaultCategory =
+    CATEGORIES.find((item) => item === initialCategory) ?? "other";
+  const defaultReporter =
+    REPORTER_TYPES.find((item) => item.value === initialReporter)?.value ??
+    "guest";
   const [roomId, setRoomId] = useState("");
   const [reporterType, setReporterType] =
-    useState<(typeof REPORTER_TYPES)[number]["value"]>("guest");
+    useState<ReporterType>(defaultReporter);
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState<IssueCategory>("other");
+  const [category, setCategory] = useState<IssueCategory>(defaultCategory);
   const [urgency, setUrgency] = useState<IssueUrgency>("normal");
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
   const [classifying, setClassifying] = useState(false);
@@ -104,105 +114,166 @@ export function NewIssueForm({
   }
 
   return (
-    <form onSubmit={submit} className="flex max-w-xl flex-col gap-5">
-      <BranchRoomPicker
-        rooms={rooms}
-        value={roomId}
-        onChange={setRoomId}
-        initialBranch={initialBranch}
-      />
+    <form onSubmit={submit} className="flex max-w-2xl flex-col gap-5">
+      <section className="rounded-xl border border-card-border bg-card p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold">접수 대상</h2>
+          <p className="mt-1 text-xs text-subtext">
+            문제가 발생한 숙소와 객실, 신고자를 선택합니다.
+          </p>
+        </div>
 
-      <label className="flex flex-col gap-1 text-sm">
-        신고자
-        <select
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-          value={reporterType}
-          onChange={(e) => setReporterType(e.target.value as typeof reporterType)}
-        >
-          {REPORTER_TYPES.map((r) => (
-            <option key={r.value} value={r.value}>
-              {r.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm">
-        신고 내용
-        <textarea
-          className="min-h-24 rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          placeholder="예: 난방기는 켜지는데 따뜻한 바람이 나오지 않아요."
+        <BranchRoomPicker
+          rooms={rooms}
+          value={roomId}
+          onChange={setRoomId}
+          initialBranch={initialBranch}
         />
-      </label>
 
-      <button
-        type="button"
-        disabled={!description.trim() || classifying}
-        onClick={classify}
-        className="self-start rounded border border-black/10 px-3 py-1.5 text-sm disabled:opacity-40 dark:border-white/10"
-      >
-        {classifying ? "분류 중..." : "AI 분류 추천 받기"}
-      </button>
+        <div className="mt-4 sm:max-w-[calc(50%-0.5rem)]">
+          <FormField label="신고자">
+            <select
+              className={INPUT_CLASS}
+              value={reporterType}
+              onChange={(event) =>
+                setReporterType(event.target.value as ReporterType)
+              }
+            >
+              {REPORTER_TYPES.map((reporter) => (
+                <option key={reporter.value} value={reporter.value}>
+                  {reporter.label}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+      </section>
 
-      {suggestion && (
-        <div className="rounded border border-black/10 p-3 text-xs dark:border-white/10">
+      <section className="rounded-xl border border-card-border bg-card p-5">
+        <div className="mb-4 flex items-start justify-between gap-3">
           <div>
-            AI 추천: 유형 <b>{ISSUE_CATEGORY_LABEL[suggestion.category]}</b> / 긴급도{" "}
-            <b>{ISSUE_URGENCY_LABEL[suggestion.urgency]}</b>
+            <h2 className="text-sm font-semibold">신고 내용</h2>
+            <p className="mt-1 text-xs text-subtext">
+              현장에서 확인한 상황을 구체적으로 입력합니다.
+            </p>
           </div>
-          <div className="mt-1 text-gray-500 dark:text-gray-400">{suggestion.reason}</div>
           <button
             type="button"
-            onClick={applySuggestion}
-            className="mt-2 underline"
+            disabled={!description.trim() || classifying}
+            onClick={classify}
+            className="h-8 shrink-0 rounded-lg border border-card-border px-3 text-xs font-medium transition hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-40 dark:hover:bg-white/5"
           >
-            추천값 아래 항목에 적용
+            {classifying ? "분류 중..." : "AI 분류 추천"}
           </button>
         </div>
-      )}
 
-      <div className="flex gap-3">
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          유형 (최종)
+        <textarea
+          className="min-h-28 w-full resize-y rounded-lg border border-card-border bg-background px-3 py-2 text-sm leading-6 outline-none placeholder:text-subtext/70 focus:border-primary/50 focus:ring-2 focus:ring-primary/10"
+          value={description}
+          onChange={(event) => setDescription(event.target.value)}
+          placeholder="예: 난방기는 켜지는데 따뜻한 바람이 나오지 않아요."
+        />
+
+        {suggestion && (
+          <div className="mt-3 rounded-lg border border-primary/15 bg-primary/[0.04] p-3 text-xs">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-semibold text-primary">AI 추천</span>
+              <span>{ISSUE_CATEGORY_LABEL[suggestion.category]}</span>
+              <span className="text-subtext">·</span>
+              <span>{ISSUE_URGENCY_LABEL[suggestion.urgency]}</span>
+            </div>
+            <p className="mt-1.5 leading-5 text-subtext">{suggestion.reason}</p>
+            <button
+              type="button"
+              onClick={applySuggestion}
+              className="mt-2 text-xs font-medium text-primary underline-offset-4 hover:underline"
+            >
+              추천값 적용
+            </button>
+          </div>
+        )}
+      </section>
+
+      <section className="rounded-xl border border-card-border bg-card p-5">
+        <div className="mb-4">
+          <h2 className="text-sm font-semibold">분류 및 긴급도</h2>
+          <p className="mt-1 text-xs text-subtext">
+            실제 처리 기준이 되는 최종 분류값입니다.
+          </p>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField label="이슈 유형">
           <select
-            className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
+            className={INPUT_CLASS}
             value={category}
-            onChange={(e) => setCategory(e.target.value as IssueCategory)}
+            onChange={(event) =>
+              setCategory(event.target.value as IssueCategory)
+            }
           >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {ISSUE_CATEGORY_LABEL[c]}
+            {CATEGORIES.map((categoryItem) => (
+              <option key={categoryItem} value={categoryItem}>
+                {ISSUE_CATEGORY_LABEL[categoryItem]}
               </option>
             ))}
           </select>
-        </label>
-        <label className="flex flex-1 flex-col gap-1 text-sm">
-          긴급도 (최종)
-          <select
-            className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-            value={urgency}
-            onChange={(e) => setUrgency(e.target.value as IssueUrgency)}
-          >
-            {URGENCIES.map((u) => (
-              <option key={u} value={u}>
-                {ISSUE_URGENCY_LABEL[u]}
-              </option>
-            ))}
-          </select>
-        </label>
-      </div>
+          </FormField>
 
-      {error && <p className="text-xs text-red-600 dark:text-red-400">{error}</p>}
+          <FormField label="긴급도">
+            <select
+              className={INPUT_CLASS}
+              value={urgency}
+              onChange={(event) =>
+                setUrgency(event.target.value as IssueUrgency)
+              }
+            >
+              {URGENCIES.map((urgencyItem) => (
+                <option key={urgencyItem} value={urgencyItem}>
+                  {ISSUE_URGENCY_LABEL[urgencyItem]}
+                </option>
+              ))}
+            </select>
+          </FormField>
+        </div>
+
+        {category === "cleaning" && (
+          <div className="mt-4 rounded-lg border border-primary/15 bg-primary/[0.04] px-4 py-3 text-xs leading-5 text-foreground/75">
+            <p className="font-medium text-foreground">청소 예외 이슈 접수</p>
+            <p className="mt-1">
+              일반 청소 작업은 체크아웃 시 자동 생성됩니다. 청소 불량, 오염
+              발견, 재청소 요청처럼 별도 확인이 필요한 문제만 접수해주세요.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {error && <p className="text-xs text-danger-text">{error}</p>}
 
       <button
         type="submit"
         disabled={submitting}
-        className="self-start rounded bg-foreground px-4 py-2 text-sm text-background disabled:opacity-40"
+        className="h-10 self-end rounded-lg bg-foreground px-5 text-sm font-medium text-background transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
       >
         {submitting ? "등록 중..." : "이슈 등록"}
       </button>
     </form>
+  );
+}
+
+const INPUT_CLASS =
+  "h-10 w-full rounded-lg border border-card-border bg-background px-3 text-sm font-normal outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/10";
+
+function FormField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="flex flex-col gap-1.5 text-xs font-medium">
+      {label}
+      {children}
+    </label>
   );
 }

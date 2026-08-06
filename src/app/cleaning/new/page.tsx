@@ -1,5 +1,4 @@
-import { getRoomsForSelect, getStaffList } from "@/lib/queries";
-import { NewCleaningTaskForm } from "@/components/cleaning/NewCleaningTaskForm";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
@@ -9,20 +8,10 @@ export default async function NewCleaningTaskPage({
   searchParams: Promise<{ branch?: string }>;
 }) {
   const { branch } = await searchParams;
-  const [rooms, staff] = await Promise.all([
-    getRoomsForSelect(),
-    getStaffList(),
-  ]);
-  const cleaners = staff.filter((s) => s.role === "cleaner");
-
-  return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-lg font-semibold">청소 작업 등록</h1>
-      <NewCleaningTaskForm
-        rooms={rooms}
-        cleaners={cleaners}
-        initialBranch={branch}
-      />
-    </div>
-  );
+  const params = new URLSearchParams({
+    category: "cleaning",
+    reporter: "manager",
+  });
+  if (branch) params.set("branch", branch);
+  redirect(`/issues/new?${params.toString()}`);
 }

@@ -2,36 +2,25 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SelectWithButton } from "@/components/common/SelectWithButton";
 import { useToast } from "@/components/common/Toast";
-import type { CleaningTaskStatus, Staff } from "@/lib/types";
+import type { CleaningTaskStatus } from "@/lib/types";
 
 export function CleaningInspectionPanel({
   taskId,
   status,
-  managers,
-  defaultManager,
   managerName,
-  onManagerChange,
   photoUrl,
   onPhotoChange,
 }: {
   taskId: string;
   status: CleaningTaskStatus;
-  managers: Staff[];
-  defaultManager: Staff | null;
   managerName: string | null;
-  onManagerChange: (name: string) => void;
   photoUrl: string | null;
   onPhotoChange: (url: string) => void;
 }) {
   const router = useRouter();
   const showToast = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const [selectedManager, setSelectedManager] = useState(
-    defaultManager?.name ?? ""
-  );
 
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -70,13 +59,6 @@ export function CleaningInspectionPanel({
     }
   }
 
-  function changeManager() {
-    if (!selectedManager) return;
-
-    onManagerChange(selectedManager);
-    showToast("검수 담당자가 변경되었습니다.");
-  }
-
   function handlePhotoChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
 
@@ -89,7 +71,6 @@ export function CleaningInspectionPanel({
     return (
       <DisabledInspectionState
         managerName={managerName}
-        defaultManager={defaultManager}
         message="청소가 시작되면 완료 사진을 등록할 수 있습니다."
       />
     );
@@ -98,10 +79,7 @@ export function CleaningInspectionPanel({
   if (status === "cleaning") {
     return (
       <div className="space-y-4">
-        <ManagerSummary
-          managerName={managerName}
-          defaultManager={defaultManager}
-        />
+        <ManagerSummary managerName={managerName} />
 
         <div>
           <div className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">
@@ -175,32 +153,7 @@ export function CleaningInspectionPanel({
   if (status === "inspection") {
     return (
       <div className="space-y-4">
-        <ManagerSummary
-          managerName={managerName}
-          defaultManager={defaultManager}
-        />
-
-        <div>
-          <div className="mb-2 text-xs font-medium text-gray-600 dark:text-gray-300">
-            검수 담당자 변경
-          </div>
-
-          <SelectWithButton
-            value={selectedManager}
-            onChange={setSelectedManager}
-            options={managers.map((manager) => ({
-              value: manager.name,
-              label:
-                manager.name === defaultManager?.name
-                  ? `${manager.name} · 지점 기본`
-                  : manager.name,
-            }))}
-            placeholder="담당자 선택"
-            buttonLabel="변경"
-            onSubmit={changeManager}
-            disabled={!selectedManager || selectedManager === managerName}
-          />
-        </div>
+        <ManagerSummary managerName={managerName} />
 
         <div className="rounded-lg bg-primary/[0.05] px-3 py-3">
           <p className="text-xs leading-5 text-gray-600 dark:text-gray-300">
@@ -224,10 +177,7 @@ export function CleaningInspectionPanel({
 
   return (
     <div className="space-y-3">
-      <ManagerSummary
-        managerName={managerName}
-        defaultManager={defaultManager}
-      />
+      <ManagerSummary managerName={managerName} />
 
       <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-4 dark:border-green-900/50 dark:bg-green-950/20">
         <p className="text-sm font-semibold text-green-700 dark:text-green-300">
@@ -242,51 +192,30 @@ export function CleaningInspectionPanel({
   );
 }
 
-function ManagerSummary({
-  managerName,
-  defaultManager,
-}: {
-  managerName: string | null;
-  defaultManager: Staff | null;
-}) {
-  const isDefault = managerName === defaultManager?.name;
-
+function ManagerSummary({ managerName }: { managerName: string | null }) {
   return (
-    <div className="flex items-center justify-between rounded-lg border border-black/10 bg-black/[0.02] px-3 py-3 dark:border-white/10 dark:bg-white/[0.03]">
-      <div>
-        <div className="text-[11px] text-gray-500 dark:text-gray-400">
-          검수 담당자
-        </div>
-
-        <div className="mt-1 text-sm font-semibold">
-          {managerName ?? "담당자 미배정"}
-        </div>
+    <div className="rounded-lg border border-black/10 bg-black/[0.02] px-3 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+      <div className="text-[11px] text-gray-500 dark:text-gray-400">
+        검수 담당자
       </div>
 
-      {managerName && isDefault && (
-        <span className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">
-          지점 기본
-        </span>
-      )}
+      <div className="mt-1 text-sm font-semibold">
+        {managerName ?? "담당자 미배정"}
+      </div>
     </div>
   );
 }
 
 function DisabledInspectionState({
   managerName,
-  defaultManager,
   message,
 }: {
   managerName: string | null;
-  defaultManager: Staff | null;
   message: string;
 }) {
   return (
     <div className="space-y-3">
-      <ManagerSummary
-        managerName={managerName}
-        defaultManager={defaultManager}
-      />
+      <ManagerSummary managerName={managerName} />
 
       <p className="rounded-lg border border-dashed border-black/10 px-3 py-3 text-xs leading-5 text-gray-500 dark:border-white/10 dark:text-gray-400">
         {message}

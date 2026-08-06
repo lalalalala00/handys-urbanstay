@@ -27,7 +27,7 @@ export function CheckoutButton({ roomId }: { roomId: string }) {
 
       showToast(
         result.task
-          ? "체크아웃 처리되었습니다. 청소 작업이 등록되었습니다."
+          ? "체크아웃 처리되었습니다. 청소 작업이 자동 생성되었습니다."
           : "체크아웃 처리되었습니다."
       );
       router.refresh();
