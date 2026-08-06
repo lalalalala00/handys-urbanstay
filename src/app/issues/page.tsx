@@ -128,7 +128,7 @@ export default async function IssuesPage({
         </div>
 
         <Link
-          href="/issues/new"
+          href={`/issues/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
           className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
         >
           이슈 등록

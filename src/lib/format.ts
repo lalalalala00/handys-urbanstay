@@ -95,6 +95,17 @@ export function formatDDay(iso: string | null): string | null {
   return diffDays > 0 ? `D-${diffDays}` : `D+${Math.abs(diffDays)}`;
 }
 
+// "김철수" / "김철수 외 2명" / "미배정" — same "이름 외 N명" convention used
+// for guest counts, applied to a list of possibly-duplicate assignee names.
+export function summarizeNames(names: (string | null | undefined)[]): string {
+  const unique = Array.from(
+    new Set(names.filter((name): name is string => Boolean(name)))
+  );
+  if (unique.length === 0) return "미배정";
+  if (unique.length === 1) return unique[0];
+  return `${unique[0]} 외 ${unique.length - 1}명`;
+}
+
 export function formatDuration(minutes: number): string {
   const abs = Math.round(Math.abs(minutes));
   const hours = Math.floor(abs / 60);

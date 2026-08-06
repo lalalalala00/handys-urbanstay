@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getRoomsOverview, type RoomOverviewItem } from "@/lib/queries";
 import { RoomOverviewRow } from "@/components/RoomOverviewRow";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -54,11 +55,20 @@ export default async function RoomsOverviewPage({
 
   return (
     <div className="flex flex-col gap-5">
-      <header>
-        <h1 className="text-lg font-semibold">객실 현황</h1>
-        <p className="mt-1 text-xs text-subtext">
-          투숙·청소·판매 상태를 조합한 객실별 현재 상태입니다.
-        </p>
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-lg font-semibold">객실 현황</h1>
+          <p className="mt-1 text-xs text-subtext">
+            투숙·청소·판매 상태를 조합한 객실별 현재 상태입니다.
+          </p>
+        </div>
+
+        <Link
+          href={`/rooms/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
+          className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
+        >
+          객실 등록
+        </Link>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">

@@ -23,7 +23,15 @@ export function RoomOverviewRow({ item }: { item: RoomOverviewItem }) {
       className="flex items-start gap-4 px-4 py-3.5 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
     >
       <div className="flex w-24 shrink-0 flex-col items-start gap-1.5">
-        <span className="font-medium whitespace-nowrap">{room.room_number}호</span>
+        <span className="flex items-center gap-1.5 font-medium whitespace-nowrap">
+          <span
+            aria-hidden="true"
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+              room.operation_status === "blocked" ? "bg-danger-text" : "bg-success-text"
+            }`}
+          />
+          {room.room_number}호
+        </span>
         <RoomStatusBadge status={displayStatus} />
       </div>
 

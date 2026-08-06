@@ -309,7 +309,18 @@ export default async function DashboardPage({
                     className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
                   >
                     <td className="px-4 py-3">
-                      <Link href={`/rooms/${room.id}`} className="font-semibold hover:text-primary">
+                      <Link
+                        href={`/rooms/${room.id}`}
+                        className="flex items-center gap-1.5 font-semibold hover:text-primary"
+                      >
+                        <span
+                          aria-hidden="true"
+                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                            room.operation_status === "blocked"
+                              ? "bg-danger-text"
+                              : "bg-success-text"
+                          }`}
+                        />
                         {room.branch} · {room.room_number}호
                       </Link>
                     </td>

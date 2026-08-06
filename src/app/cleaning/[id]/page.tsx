@@ -38,6 +38,7 @@ export default async function CleaningTaskDetailPage({
         cleaners={cleaners}
         managers={managers}
         roomOpenIssueCount={task.roomOpenIssueCount}
+        roomOpenIssues={task.roomOpenIssues}
       />
     </div>
   );

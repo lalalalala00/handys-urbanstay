@@ -35,6 +35,7 @@ export default async function CleaningTaskModal({
         cleaners={cleaners}
         managers={managers}
         roomOpenIssueCount={task.roomOpenIssueCount}
+        roomOpenIssues={task.roomOpenIssues}
       />
     </Modal>
   );

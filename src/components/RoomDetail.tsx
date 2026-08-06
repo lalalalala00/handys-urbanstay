@@ -9,6 +9,7 @@ import { DoorLockField } from "@/components/DoorLockField";
 import { CopyButton } from "@/components/CopyButton";
 import { AIIssueSummary } from "@/components/AIIssueSummary";
 import { RoomModalHeader } from "@/components/RoomModalHeader";
+import { CheckoutButton } from "@/components/CheckoutButton";
 import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
 import {
   formatDateTimeWithDay,
@@ -16,6 +17,7 @@ import {
   formatBuffer,
   isToday,
   minutesUntil,
+  summarizeNames,
 } from "@/lib/format";
 import {
   CalendarIcon,
@@ -67,10 +69,14 @@ export function RoomDetail({
         room={room}
         task={task}
         operatorName={operator?.name ?? null}
-        crewName={task?.assignee?.name ?? null}
+        cleaningCrewName={task?.assignee?.name ?? null}
+        issueCrewName={
+          issues.length > 0
+            ? summarizeNames(issues.map((issue) => issue.assignee?.name))
+            : undefined
+        }
         operationControl={{
           roomOpenIssueCount: issues.length,
-          suggestedNote: "객실 운영 점검 필요",
         }}
       />
 
@@ -78,6 +84,7 @@ export function RoomDetail({
         <section className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(240px,1fr)]">
           <ReservationCard
             room={room}
+            checkedIn={checkedIn}
             hasGuest={hasGuest}
             plannedCheckout={plannedCheckout}
             minsUntilCheckin={minsUntilCheckin}
@@ -127,12 +134,14 @@ export function RoomDetail({
 
 function ReservationCard({
   room,
+  checkedIn,
   hasGuest,
   plannedCheckout,
   minsUntilCheckin,
   hasCheckinCountdown,
 }: {
   room: Room;
+  checkedIn: boolean;
   hasGuest: boolean;
   plannedCheckout: string | null;
   minsUntilCheckin: number | null;
@@ -140,11 +149,16 @@ function ReservationCard({
 }) {
   return (
     <Card>
-      <CardHeader
-        icon={<CalendarIcon className="h-4 w-4" />}
-        title="예약 정보"
-        description="현재 및 다음 투숙 일정을 확인합니다."
-      />
+      <div className="mb-5 flex items-start justify-between gap-4">
+        <CardHeader
+          icon={<CalendarIcon className="h-4 w-4" />}
+          title="예약 정보"
+          description="현재 및 다음 투숙 일정을 확인합니다."
+          className="mb-0"
+        />
+
+        {checkedIn && <CheckoutButton roomId={room.id} />}
+      </div>
 
       {hasGuest ? (
         <>
@@ -363,8 +377,19 @@ function IssueListCard({ issues }: { issues: Issue[] }) {
                   </span>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between">
-                  <IssueStatusBadge status={issue.status} />
+                <div className="mt-3 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <IssueStatusBadge status={issue.status} />
+
+                    <span className="flex items-center gap-1 text-[11px] text-subtext">
+                      <CrewIcon className="h-3 w-3" />
+                      {issue.assignee?.name ?? (
+                        <span className="text-amber-600 dark:text-amber-400">
+                          미배정
+                        </span>
+                      )}
+                    </span>
+                  </div>
 
                   <span className="text-xs font-medium text-primary">
                     확인하기

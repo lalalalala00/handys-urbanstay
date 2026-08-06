@@ -407,7 +407,7 @@ export async function getCleaningTasksList(filter?: { branch?: string; region?: 
 
 export async function getCleaningTaskById(
   id: string
-): Promise<CleaningTask & { roomOpenIssueCount: number }> {
+): Promise<CleaningTask & { roomOpenIssueCount: number; roomOpenIssues: Issue[] }> {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("cleaning_tasks")
@@ -417,14 +417,31 @@ export async function getCleaningTaskById(
   if (error) throw new Error(error.message);
   const task = data as CleaningTask;
 
-  const { count, error: openCountError } = await supabase
+  const { data: openIssues, error: openIssuesError } = await supabase
     .from("issues")
-    .select("id", { count: "exact", head: true })
+    .select("*, assignee:staff(id, name, role)")
     .eq("room_id", task.room_id)
     .neq("status", "done");
-  if (openCountError) throw new Error(openCountError.message);
+  if (openIssuesError) throw new Error(openIssuesError.message);
 
-  return { ...task, roomOpenIssueCount: count ?? 0 };
+  const roomOpenIssues = (openIssues ?? []) as Issue[];
+
+  return { ...task, roomOpenIssueCount: roomOpenIssues.length, roomOpenIssues };
+}
+
+// The crew assigned to a room's latest cleaning task — used on the issue
+// detail header, alongside (but distinct from) the issue's own assignee.
+export async function getRoomCleaningCrew(roomId: string): Promise<Staff | null> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("cleaning_tasks")
+    .select("assignee:staff(id, name, role, branch)")
+    .eq("room_id", roomId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data?.assignee as unknown as Staff | null) ?? null;
 }
 
 const URGENCY_RANK: Record<string, number> = { urgent: 0, normal: 1, low: 2 };
@@ -470,21 +487,6 @@ export async function getIssueById(id: string) {
   if (openCountError) throw new Error(openCountError.message);
 
   return { ...issue, roomOpenIssueCount: count ?? 0 };
-}
-
-// The crew assigned to this room's latest cleaning task, for the shared
-// modal header.
-export async function getRoomCrew(roomId: string): Promise<Staff | null> {
-  const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase
-    .from("cleaning_tasks")
-    .select("assignee:staff(id, name, role, branch)")
-    .eq("room_id", roomId)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-  return (data?.assignee as unknown as Staff | null) ?? null;
 }
 
 export type RoomActivityItem = {

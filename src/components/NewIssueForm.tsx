@@ -3,7 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ISSUE_CATEGORY_LABEL, ISSUE_URGENCY_LABEL } from "@/lib/labels";
-import type { IssueCategory, IssueUrgency, OccupancyStatus, OperationStatus } from "@/lib/types";
+import {
+  BranchRoomPicker,
+  roomOptionLabel,
+  type RoomOption,
+} from "@/components/BranchRoomPicker";
+import type { IssueCategory, IssueUrgency } from "@/lib/types";
 
 const CATEGORIES = Object.keys(ISSUE_CATEGORY_LABEL) as IssueCategory[];
 const URGENCIES = Object.keys(ISSUE_URGENCY_LABEL) as IssueUrgency[];
@@ -14,27 +19,19 @@ const REPORTER_TYPES = [
   { value: "facility", label: "시설 담당자" },
 ] as const;
 
-interface RoomOption {
-  id: string;
-  branch: string;
-  room_number: string;
-  occupancy_status: OccupancyStatus;
-  operation_status: OperationStatus;
-}
-
-function roomOptionLabel(room: RoomOption): string {
-  if (room.operation_status === "blocked") return "판매중지";
-  if (room.occupancy_status === "occupied") return "투숙중";
-  return "빈 객실";
-}
-
 interface Suggestion {
   category: IssueCategory;
   urgency: IssueUrgency;
   reason: string;
 }
 
-export function NewIssueForm({ rooms }: { rooms: RoomOption[] }) {
+export function NewIssueForm({
+  rooms,
+  initialBranch,
+}: {
+  rooms: RoomOption[];
+  initialBranch?: string;
+}) {
   const router = useRouter();
   const [roomId, setRoomId] = useState("");
   const [reporterType, setReporterType] =
@@ -108,21 +105,12 @@ export function NewIssueForm({ rooms }: { rooms: RoomOption[] }) {
 
   return (
     <form onSubmit={submit} className="flex max-w-xl flex-col gap-5">
-      <label className="flex flex-col gap-1 text-sm">
-        객실
-        <select
-          className="rounded border border-black/10 bg-transparent px-3 py-2 dark:border-white/10"
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
-        >
-          <option value="">객실 선택</option>
-          {rooms.map((r) => (
-            <option key={r.id} value={r.id}>
-              {r.branch} {r.room_number}호 ({roomOptionLabel(r)})
-            </option>
-          ))}
-        </select>
-      </label>
+      <BranchRoomPicker
+        rooms={rooms}
+        value={roomId}
+        onChange={setRoomId}
+        initialBranch={initialBranch}
+      />
 
       <label className="flex flex-col gap-1 text-sm">
         신고자

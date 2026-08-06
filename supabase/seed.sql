@@ -9,6 +9,12 @@
 -- payment_status/payment_amount/door_lock_code are display-only mock
 -- fields (no real PG or door-lock vendor integration -- out of MVP scope,
 -- see README "제외" section).
+--
+-- Re-runnable: clears prior demo data first, so this can be re-executed
+-- (e.g. to refresh the now()-relative timestamps) without manually
+-- resetting the DB.
+
+truncate table issues, cleaning_tasks, rooms, staff restart identity cascade;
 
 insert into staff (name, role, branch) values
   ('김민준', 'cleaner', null),
@@ -26,8 +32,8 @@ insert into rooms (
   ('노블리안 강남', '1205', 'vacant',   'ready',   null,                 now() - interval '30 minutes', now() + interval '3 hours',    '조민석', '010-7734-9021', 1, 1, 'paid',    95000, '1075#'),
   ('노블리안 강남', '1206', 'vacant',   'ready',   null,                 now() - interval '50 minutes', now() + interval '2 hours',    '윤서아', '010-5560-3312', 2, 3, 'unpaid', 270000, '6392#'),
   ('노블리안 강남', '1207', 'vacant',   'ready',   null,                 now() - interval '70 minutes', now() + interval '1 hour',     '한도현', '010-3391-8845', 1, 2, 'paid',   180000, '2648#'),
-  ('홍대 하이브',    '802',  'vacant',   'ready',   null,                 now() - interval '2 hours',   now() + interval '90 minutes', '김태리', '010-9012-4456', 2, 1, 'paid',    88000, '7710#'),
-  ('홍대 하이브',    '803',  'occupied', 'ready',   null,                 null,                          now() + interval '6 hours',   '박서준', '010-6623-1190', 3, 2, 'paid',   176000, '3355#'),
+  ('홍대 하이브',    '802',  'vacant',   'ready',   null,                 now() - interval '2 hours',   now() + interval '1 day 9 hours', '김태리', '010-9012-4456', 2, 1, 'paid',    88000, '7710#'),
+  ('홍대 하이브',    '803',  'occupied', 'ready',   null,                 now() + interval '5 hours',   now() - interval '1 day 19 hours', '박서준', '010-6623-1190', 3, 2, 'paid',   176000, '3355#'),
   ('홍대 하이브',    '804',  'vacant',   'blocked', '도어락 배터리 점검', now() - interval '1 day',     null,                          null,     null,             null, null, null,     null,   '9081#'),
   ('강남 스퀘어 스테이', '1208', 'vacant', 'ready', null,                 now() - interval '5 minutes',  now() + interval '6 hours',    '오나은', '010-4487-2203', 2, 4, 'unpaid', 340000, '5124#');
 
@@ -66,16 +72,16 @@ insert into rooms (
   branch, room_number, occupancy_status, operation_status, operation_note, checkout_at, next_checkin_at,
   guest_name, guest_phone, guest_count, nights, payment_status, payment_amount, door_lock_code
 ) values
-  ('강남 스퀘어 스테이', '1301', 'occupied', 'ready', null, null,                          now() + interval '8 hours',    '최유진', '010-8210-6634', 2, 3, 'paid',   270000, '8890#'),
-  ('강남 스퀘어 스테이', '1302', 'vacant',   'ready', null, now() - interval '3 hours',   null,                           null,     null,             null, null, null,     null,   '1263#'),
+  ('강남 스퀘어 스테이', '1301', 'occupied', 'ready', null, now() + interval '2 days',    now() - interval '1 day',      '최유진', '010-8210-6634', 2, 3, 'paid',   270000, '8890#'),
+  ('강남 스퀘어 스테이', '1302', 'vacant',   'ready', null, now() - interval '3 hours',   now() + interval '1 day 3 hours', '이도현', '010-2234-5567', 2, 2, 'unpaid', 176000, '1263#'),
   ('강남 스퀘어 스테이', '1303', 'vacant',   'ready', null, now() - interval '20 minutes', now() + interval '25 minutes', '장하윤', '010-3345-7789', 1, 1, 'unpaid',  92000, '4470#'),
   ('마포 브릭하우스',    '805',  'vacant',   'ready', null, now() - interval '1 hour',    now() + interval '50 minutes',  '임수빈', '010-9987-2214', 2, 2, 'paid',   176000, '6023#'),
   ('마포 브릭하우스',    '806',  'vacant',   'ready', null, now() - interval '40 minutes', now() + interval '30 minutes', '노지호', '010-1156-8890', 1, 2, 'paid',   176000, '3381#'),
   ('마포 브릭하우스',    '807',  'vacant',   'ready', null, now() - interval '1 day',     now() + interval '4 days',      '백승우', '010-4432-0087', 3, 5, 'paid',   450000, '7654#'),
-  ('해운대 오션하우스',  '901',  'occupied', 'ready', null, null,                          now() + interval '10 hours',   '문채원', '010-2298-6613', 2, 2, 'paid',   200000, '9042#'),
+  ('해운대 오션하우스',  '901',  'occupied', 'ready', null, now() + interval '1 day 6 hours', now() - interval '18 hours', '문채원', '010-2298-6613', 2, 2, 'paid',   200000, '9042#'),
   ('해운대 오션하우스',  '902',  'vacant',   'ready', null, now() - interval '15 minutes', now() + interval '20 minutes', '류시원', '010-6671-3348', 1, 1, 'unpaid', 100000, '1587#'),
   ('해운대 오션하우스',  '903',  'vacant',   'ready', null, now() - interval '2 hours',    now() + interval '40 minutes', '심유나', '010-8843-2201', 2, 3, 'paid',   300000, '2936#'),
-  ('선셋베이 해운대',    '904',  'vacant',   'ready', null, now() - interval '3 hours',    now() + interval '2 hours',    '정다은', '010-5512-9087', 2, 2, 'paid',   200000, '6708#'),
+  ('선셋베이 해운대',    '904',  'vacant',   'ready', null, now() - interval '3 hours',    now() + interval '3 days 4 hours', '정다은', '010-5512-9087', 2, 2, 'paid',   200000, '6708#'),
   ('선셋베이 해운대',    '905',  'vacant',   'ready', null, now() - interval '1 day',     null,                           null,     null,             null, null, null,     null,   '4193#');
 
 insert into cleaning_tasks (room_id, status, assignee_id, estimated_minutes, started_at, completed_at)

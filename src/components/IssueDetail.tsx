@@ -27,13 +27,13 @@ export function IssueDetail({
   issue,
   room,
   staffList,
-  crew,
+  cleaningCrewName,
   roomOpenIssueCount,
 }: {
   issue: Issue;
   room: Room;
   staffList: Staff[];
-  crew: Staff | null;
+  cleaningCrewName: string | null;
   roomOpenIssueCount: number;
 }) {
   const suggestedRole = CATEGORY_DEFAULT_ROLE[issue.category];
@@ -52,11 +52,11 @@ export function IssueDetail({
       <RoomModalHeader
         room={room}
         operatorName={managerName}
-        crewName={crew?.name ?? null}
+        cleaningCrewName={cleaningCrewName}
+        issueCrewName={issue.assignee?.name ?? null}
         titleSuffix="이슈"
         operationControl={{
           roomOpenIssueCount,
-          suggestedNote: `${ISSUE_CATEGORY_LABEL[issue.category]} 이슈 확인 필요`,
         }}
       />
 

@@ -105,6 +105,13 @@ export default async function CleaningTasksPage({
             객실별 청소 일정과 배정 현황을 확인합니다.
           </p>
         </div>
+
+        <Link
+          href={`/cleaning/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
+          className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
+        >
+          청소 작업 등록
+        </Link>
       </header>
 
       {(urgentCount > 0 || unassignedCount > 0) && (

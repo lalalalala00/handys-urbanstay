@@ -17,16 +17,18 @@ export function RoomModalHeader({
   room,
   task,
   operatorName,
-  crewName,
+  cleaningCrewName,
+  issueCrewName,
   titleSuffix,
   operationControl,
 }: {
   room: Room;
   task?: CleaningTask | null;
   operatorName: string | null;
-  crewName: string | null;
+  cleaningCrewName: string | null;
+  issueCrewName?: string | null;
   titleSuffix?: string;
-  operationControl?: { roomOpenIssueCount: number; suggestedNote: string };
+  operationControl?: { roomOpenIssueCount: number };
 }) {
   const region = regionForBranch(room.branch);
   const displayStatus = getRoomDisplayStatus(room, task);
@@ -37,21 +39,38 @@ export function RoomModalHeader({
   const closeModal = useModalClose();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showBlockForm, setShowBlockForm] = useState(false);
+  const [blockReason, setBlockReason] = useState("");
   const isBlocked = room.operation_status === "blocked";
 
-  async function changeOperationStatus() {
-    const nextStatus: OperationStatus = isBlocked ? "ready" : "blocked";
+  async function blockRoom(reason: string) {
     setPending(true);
     setError(null);
 
     try {
+      const issueRes = await fetch("/api/issues", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          roomId: room.id,
+          category: "other",
+          description: reason,
+          reporterType: "manager",
+          urgency: "urgent",
+        }),
+      });
+      const issueResult = await issueRes.json();
+      if (!issueRes.ok) {
+        setError(issueResult.error ?? "이슈 등록에 실패했습니다.");
+        return;
+      }
+
       const response = await fetch(`/api/rooms/${room.id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          operationStatus: nextStatus,
-          operationNote:
-            nextStatus === "blocked" ? operationControl?.suggestedNote : null,
+          operationStatus: "blocked" satisfies OperationStatus,
+          operationNote: reason,
         }),
       });
       const result = await response.json();
@@ -61,11 +80,36 @@ export function RoomModalHeader({
         return;
       }
 
-      showToast(
-        nextStatus === "blocked"
-          ? "객실 판매를 중지했습니다."
-          : "객실 판매를 재개했습니다."
-      );
+      showToast("객실 판매를 중지했습니다.");
+      setShowBlockForm(false);
+      setBlockReason("");
+      router.refresh();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function resumeSale() {
+    setPending(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/rooms/${room.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          operationStatus: "ready" satisfies OperationStatus,
+          operationNote: null,
+        }),
+      });
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error ?? "객실 운영 상태를 변경하지 못했습니다.");
+        return;
+      }
+
+      showToast("객실 판매를 재개했습니다.");
       router.refresh();
     } finally {
       setPending(false);
@@ -111,7 +155,9 @@ export function RoomModalHeader({
                 {operationControl && (
                   <button
                     type="button"
-                    onClick={changeOperationStatus}
+                    onClick={() =>
+                      isBlocked ? resumeSale() : setShowBlockForm((v) => !v)
+                    }
                     disabled={
                       pending ||
                       (isBlocked && operationControl.roomOpenIssueCount > 0)
@@ -126,6 +172,42 @@ export function RoomModalHeader({
                   </button>
                 )}
               </div>
+            )}
+
+            {showBlockForm && !isBlocked && (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (!blockReason.trim()) return;
+                  blockRoom(blockReason.trim());
+                }}
+                className="mt-1 flex items-center gap-2"
+              >
+                <input
+                  autoFocus
+                  value={blockReason}
+                  onChange={(e) => setBlockReason(e.target.value)}
+                  placeholder="판매 중지 사유를 입력하세요"
+                  className="h-7 min-w-0 flex-1 rounded-md border border-black/10 bg-transparent px-2 text-xs dark:border-white/10"
+                />
+                <button
+                  type="submit"
+                  disabled={pending || !blockReason.trim()}
+                  className="h-7 shrink-0 rounded-md bg-primary px-2.5 text-[11px] font-semibold text-white transition hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {pending ? "등록 중..." : "확인"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowBlockForm(false);
+                    setBlockReason("");
+                  }}
+                  className="h-7 shrink-0 rounded-md px-2 text-[11px] text-subtext hover:bg-black/5 dark:hover:bg-white/10"
+                >
+                  취소
+                </button>
+              </form>
             )}
 
             {isBlocked &&
@@ -181,9 +263,12 @@ export function RoomModalHeader({
           )}
         </div>
 
-        <div className="flex items-center gap-5">
+        <div className="flex flex-wrap items-center gap-5">
           <PersonField label="담당 운영자" name={operatorName} sub={room.branch} variant="operator" />
-          <PersonField label="담당 크루" name={crewName} variant="crew" />
+          <PersonField label="청소 담당 크루" name={cleaningCrewName} variant="crew" />
+          {issueCrewName !== undefined && (
+            <PersonField label="이슈 담당 크루" name={issueCrewName} variant="crew" />
+          )}
         </div>
       </div>
     </div>

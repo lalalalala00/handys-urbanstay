@@ -15,11 +15,11 @@ import { CrewPhoneSimulator } from "@/components/CrewPhoneSimulator";
 import { RoomModalHeader } from "@/components/RoomModalHeader";
 import { ActionPanel, ActionSection } from "@/components/ActionPanel";
 import { CLEANING_STATUS_LABEL } from "@/lib/labels";
-import { formatBuffer, formatDateTime, minutesUntil } from "@/lib/format";
+import { formatBuffer, formatDateTime, minutesUntil, summarizeNames } from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";
 import { CLEANING_TASK_NEXT, CLEANING_STEPS } from "@/lib/transitions";
 import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";
-import type { CleaningTask, Room, Staff } from "@/lib/types";
+import type { CleaningTask, Issue, Room, Staff } from "@/lib/types";
 const AUTO_HANDLED_TRANSITIONS: Record<string, string[]> = {
   unassigned: ["assigned"],
   cleaning: ["inspection"],
@@ -31,12 +31,14 @@ export function CleaningTaskDetail({
   cleaners,
   managers,
   roomOpenIssueCount,
+  roomOpenIssues,
 }: {
   task: CleaningTask;
   room: Room;
   cleaners: Staff[];
   managers: Staff[];
   roomOpenIssueCount: number;
+  roomOpenIssues: Issue[];
 }) {
   const priority = calcRoomPriority(room, task);
   const checkinMinutes = minutesUntil(room.next_checkin_at);
@@ -58,11 +60,15 @@ export function CleaningTaskDetail({
         room={room}
         task={task}
         operatorName={managerName}
-        crewName={task.assignee?.name ?? null}
+        cleaningCrewName={task.assignee?.name ?? null}
+        issueCrewName={
+          roomOpenIssues.length > 0
+            ? summarizeNames(roomOpenIssues.map((issue) => issue.assignee?.name))
+            : undefined
+        }
         titleSuffix="청소"
         operationControl={{
           roomOpenIssueCount,
-          suggestedNote: "청소 작업 확인 필요",
         }}
       />
       <div className="rounded-xl border border-black/10 bg-white/70 px-5 py-4 dark:border-white/10 dark:bg-white/[0.03]">
