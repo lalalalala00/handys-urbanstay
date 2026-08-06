@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SelectWithButton } from "@/components/SelectWithButton";
-import { useToast } from "@/components/Toast";
+import { SelectWithButton } from "@/components/common/SelectWithButton";
+import { useToast } from "@/components/common/Toast";
 import type { Staff } from "@/lib/types";
 
 export function CleaningCrewReassignment({

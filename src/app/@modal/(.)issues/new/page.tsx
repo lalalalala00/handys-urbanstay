@@ -1,6 +1,6 @@
 import { getRoomsForSelect } from "@/lib/queries";
-import { NewIssueForm } from "@/components/NewIssueForm";
-import { Modal } from "@/components/Modal";
+import { NewIssueForm } from "@/components/issue/NewIssueForm";
+import { Modal } from "@/components/common/Modal";
 
 export const dynamic = "force-dynamic";
 

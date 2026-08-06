@@ -3,13 +3,13 @@ import {
   CleaningStatusBadge,
   IssueStatusBadge,
   UrgencyBadge,
-} from "@/components/StatusBadges";
-import { Badge } from "@/components/Badge";
-import { DoorLockField } from "@/components/DoorLockField";
-import { CopyButton } from "@/components/CopyButton";
-import { AIIssueSummary } from "@/components/AIIssueSummary";
-import { RoomModalHeader } from "@/components/RoomModalHeader";
-import { CheckoutButton } from "@/components/CheckoutButton";
+} from "@/components/common/StatusBadges";
+import { Badge } from "@/components/common/Badge";
+import { DoorLockField } from "@/components/room/DoorLockField";
+import { CopyButton } from "@/components/common/CopyButton";
+import { AIIssueSummary } from "@/components/issue/AIIssueSummary";
+import { RoomModalHeader } from "@/components/common/RoomModalHeader";
+import { CheckoutButton } from "@/components/room/CheckoutButton";
 import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
 import {
   formatDateTimeWithDay,
@@ -25,7 +25,7 @@ import {
   CrewIcon,
   IssueIcon,
   LockIcon,
-} from "@/components/icons";
+} from "@/components/common/icons";
 import type { CleaningTask, Issue, Room, Staff } from "@/lib/types";
 import type { RoomActivityItem } from "@/lib/queries";
 import type { RoomPriority } from "@/lib/priority";

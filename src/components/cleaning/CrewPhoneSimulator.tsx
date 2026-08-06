@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/common/Toast";
 import { formatDateTime } from "@/lib/format";
 import type { Room } from "@/lib/types";
 

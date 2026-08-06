@@ -1,4 +1,4 @@
-import { NewRoomForm } from "@/components/NewRoomForm";
+import { NewRoomForm } from "@/components/room/NewRoomForm";
 
 export const dynamic = "force-dynamic";
 

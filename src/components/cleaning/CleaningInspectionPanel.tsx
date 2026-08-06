@@ -2,8 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SelectWithButton } from "@/components/SelectWithButton";
-import { useToast } from "@/components/Toast";
+import { SelectWithButton } from "@/components/common/SelectWithButton";
+import { useToast } from "@/components/common/Toast";
 import type { CleaningTaskStatus, Staff } from "@/lib/types";
 
 export function CleaningInspectionPanel({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MessageIcon } from "@/components/icons";
+import { MessageIcon } from "@/components/common/icons";
 import { formatDateTime } from "@/lib/format";
 import type { Issue } from "@/lib/types";
 

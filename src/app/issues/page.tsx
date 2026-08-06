@@ -4,13 +4,13 @@ import {
   IssueStatusBadge,
   UrgencyBadge,
   ISSUE_STATUS_TONE,
-} from "@/components/StatusBadges";
+} from "@/components/common/StatusBadges";
 
 import { ISSUE_CATEGORY_LABEL, ISSUE_STATUS_LABEL } from "@/lib/labels";
 import { formatDateTime } from "@/lib/format";
 import type { IssueStatus } from "@/lib/types";
-import { StatusTabs } from "@/components/StatusTabs";
-import { ClickableTableRow } from "@/components/ClickableTableRow";
+import { StatusTabs } from "@/components/common/StatusTabs";
+import { ClickableTableRow } from "@/components/common/ClickableTableRow";
 
 export const dynamic = "force-dynamic";
 

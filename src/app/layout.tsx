@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { Sidebar } from "@/components/Sidebar";
-import { Header } from "@/components/Header";
-import { ToastProvider } from "@/components/Toast";
+import { Sidebar } from "@/components/common/Sidebar";
+import { Header } from "@/components/common/Header";
+import { ToastProvider } from "@/components/common/Toast";
 import "./globals.css";
 
 export const metadata: Metadata = {

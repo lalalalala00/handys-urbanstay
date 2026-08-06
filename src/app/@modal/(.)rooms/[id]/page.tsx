@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getRoomDetail } from "@/lib/queries";
-import { RoomDetail } from "@/components/RoomDetail";
-import { Modal } from "@/components/Modal";
+import { RoomDetail } from "@/components/room/RoomDetail";
+import { Modal } from "@/components/common/Modal";
 
 export const dynamic = "force-dynamic";
 

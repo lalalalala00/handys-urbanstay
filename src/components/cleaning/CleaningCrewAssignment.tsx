@@ -1,6 +1,6 @@
 "use client";
 
-import { AvailableCrewList } from "@/components/AvailableCrewList";
+import { AvailableCrewList } from "@/components/cleaning/AvailableCrewList";
 
 export function CleaningCrewAssignment({
   taskId,

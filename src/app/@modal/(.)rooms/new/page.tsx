@@ -1,5 +1,5 @@
-import { NewRoomForm } from "@/components/NewRoomForm";
-import { Modal } from "@/components/Modal";
+import { NewRoomForm } from "@/components/room/NewRoomForm";
+import { Modal } from "@/components/common/Modal";
 
 export const dynamic = "force-dynamic";
 

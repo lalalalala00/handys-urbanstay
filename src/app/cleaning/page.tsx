@@ -4,12 +4,12 @@ import {
   CleaningStatusBadge,
   RiskBadge,
   CLEANING_TONE,
-} from "@/components/StatusBadges";
+} from "@/components/common/StatusBadges";
 
 import { formatBuffer, formatDateTime, formatRelative } from "@/lib/format";
 import type { CleaningTaskStatus } from "@/lib/types";
-import { StatusTabs } from "@/components/StatusTabs";
-import { ClickableTableRow } from "@/components/ClickableTableRow";
+import { StatusTabs } from "@/components/common/StatusTabs";
+import { ClickableTableRow } from "@/components/common/ClickableTableRow";
 
 export const dynamic = "force-dynamic";
 

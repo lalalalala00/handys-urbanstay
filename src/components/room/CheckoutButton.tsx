@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/common/Toast";
 
 export function CheckoutButton({ roomId }: { roomId: string }) {
   const router = useRouter();

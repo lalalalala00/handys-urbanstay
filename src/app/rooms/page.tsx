@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getRoomsOverview, type RoomOverviewItem } from "@/lib/queries";
-import { RoomOverviewRow } from "@/components/RoomOverviewRow";
+import { RoomOverviewRow } from "@/components/room/RoomOverviewRow";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ROOM_DISPLAY_STATUS_LABEL } from "@/lib/labels";
 import { addressForBranch } from "@/lib/regions";
@@ -12,7 +12,7 @@ import {
   ClockIcon,
   LockIcon,
   RoomIcon,
-} from "@/components/icons";
+} from "@/components/common/icons";
 import type { RoomDisplayStatus } from "@/lib/roomDisplayStatus";
 
 export const dynamic = "force-dynamic";

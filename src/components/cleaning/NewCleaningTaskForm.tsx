@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BranchRoomPicker, type RoomOption } from "@/components/BranchRoomPicker";
+import { BranchRoomPicker, type RoomOption } from "@/components/common/BranchRoomPicker";
 import type { Staff } from "@/lib/types";
 
 export function NewCleaningTaskForm({

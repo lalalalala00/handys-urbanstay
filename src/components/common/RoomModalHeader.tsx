@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { RoomStatusBadge } from "@/components/StatusBadges";
-import { Badge } from "@/components/Badge";
-import { CopyButton } from "@/components/CopyButton";
-import { useModalClose } from "@/components/Modal";
-import { useToast } from "@/components/Toast";
-import { LocationIcon } from "@/components/icons";
+import { RoomStatusBadge } from "@/components/common/StatusBadges";
+import { Badge } from "@/components/common/Badge";
+import { CopyButton } from "@/components/common/CopyButton";
+import { useModalClose } from "@/components/common/Modal";
+import { useToast } from "@/components/common/Toast";
+import { LocationIcon } from "@/components/common/icons";
 import { regionForBranch } from "@/lib/regions";
 import { formatDateTimeWithDay, formatRelative } from "@/lib/format";
 import { getRoomDisplayStatus } from "@/lib/roomDisplayStatus";

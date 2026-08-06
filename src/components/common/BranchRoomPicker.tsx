@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BranchSelect } from "@/components/BranchSelect";
+import { BranchSelect } from "@/components/common/BranchSelect";
 import type { OccupancyStatus, OperationStatus } from "@/lib/types";
 
 export interface RoomOption {

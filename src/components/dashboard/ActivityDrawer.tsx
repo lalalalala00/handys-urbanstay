@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { formatTime } from "@/lib/format";
-import { CheckCircleIcon } from "@/components/icons";
+import { CheckCircleIcon } from "@/components/common/icons";
 import type { ActivityCategory, ActivityItem } from "@/lib/queries";
 
 const TABS: { key: ActivityCategory | "all"; label: string }[] = [

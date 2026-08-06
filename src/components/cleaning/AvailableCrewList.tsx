@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/components/Toast";
+import { useToast } from "@/components/common/Toast";
 import { formatDuration } from "@/lib/format";
 import { STAFF_ROLE_LABEL } from "@/lib/labels";
 import type { Staff } from "@/lib/types";

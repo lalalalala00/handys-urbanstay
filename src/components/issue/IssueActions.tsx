@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { StatusChangeButtons } from "@/components/StatusChangeButtons";
-import { useToast } from "@/components/Toast";
+import { StatusChangeButtons } from "@/components/common/StatusChangeButtons";
+import { useToast } from "@/components/common/Toast";
 import {
   ISSUE_CATEGORY_LABEL,
   ISSUE_STATUS_LABEL,

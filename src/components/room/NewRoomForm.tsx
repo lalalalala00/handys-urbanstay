@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { BranchSelect } from "@/components/BranchSelect";
+import { BranchSelect } from "@/components/common/BranchSelect";
 
 export function NewRoomForm({ initialBranch }: { initialBranch?: string }) {
   const router = useRouter();

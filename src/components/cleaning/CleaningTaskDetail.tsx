@@ -5,15 +5,15 @@ import {
   CleaningStatusBadge,
   RiskBadge,
   RoomStatusBadge,
-} from "@/components/StatusBadges";
-import { ProgressTimeline } from "@/components/ProgressTimeline";
-import { CleaningTaskActions } from "@/components/CleaningTaskActions";
-import { CleaningCrewAssignment } from "@/components/CleaningCrewAssignment";
-import { CleaningCrewReassignment } from "@/components/CleaningCrewReassignment";
-import { CleaningInspectionPanel } from "@/components/CleaningInspectionPanel";
-import { CrewPhoneSimulator } from "@/components/CrewPhoneSimulator";
-import { RoomModalHeader } from "@/components/RoomModalHeader";
-import { ActionPanel, ActionSection } from "@/components/ActionPanel";
+} from "@/components/common/StatusBadges";
+import { ProgressTimeline } from "@/components/common/ProgressTimeline";
+import { CleaningTaskActions } from "@/components/cleaning/CleaningTaskActions";
+import { CleaningCrewAssignment } from "@/components/cleaning/CleaningCrewAssignment";
+import { CleaningCrewReassignment } from "@/components/cleaning/CleaningCrewReassignment";
+import { CleaningInspectionPanel } from "@/components/cleaning/CleaningInspectionPanel";
+import { CrewPhoneSimulator } from "@/components/cleaning/CrewPhoneSimulator";
+import { RoomModalHeader } from "@/components/common/RoomModalHeader";
+import { ActionPanel, ActionSection } from "@/components/common/ActionPanel";
 import { CLEANING_STATUS_LABEL } from "@/lib/labels";
 import { formatBuffer, formatDateTime, minutesUntil, summarizeNames } from "@/lib/format";
 import { calcRoomPriority } from "@/lib/priority";

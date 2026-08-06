@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getIssueById, getStaffList, getRoomCleaningCrew } from "@/lib/queries";
-import { IssueDetail } from "@/components/IssueDetail";
-import { Modal } from "@/components/Modal";
+import { IssueDetail } from "@/components/issue/IssueDetail";
+import { Modal } from "@/components/common/Modal";
 
 export const dynamic = "force-dynamic";
 

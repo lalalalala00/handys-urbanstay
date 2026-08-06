@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Tone } from "@/components/Badge";
+import type { Tone } from "@/components/common/Badge";
 
 const TONE_CARD_CLASSES: Record<Tone, string> = {
   neutral:

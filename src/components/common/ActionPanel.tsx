@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ActionIcon, CheckCircleIcon, ChevronDownIcon } from "@/components/icons";
+import { ActionIcon, CheckCircleIcon, ChevronDownIcon } from "@/components/common/icons";
 
 export function ActionPanel({ children }: { children: React.ReactNode }) {
   return (

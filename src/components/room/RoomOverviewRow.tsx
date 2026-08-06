@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { Badge, type Tone } from "@/components/Badge";
-import { RoomStatusBadge } from "@/components/StatusBadges";
-import { CopyButton } from "@/components/CopyButton";
-import { IssueIcon } from "@/components/icons";
+import { Badge, type Tone } from "@/components/common/Badge";
+import { RoomStatusBadge } from "@/components/common/StatusBadges";
+import { CopyButton } from "@/components/common/CopyButton";
+import { IssueIcon } from "@/components/common/icons";
 import { CLEANING_STATUS_LABEL } from "@/lib/labels";
 import { calcRoomPriority } from "@/lib/priority";
 import { formatBuffer, formatDateTimeWithDay, formatRelative, minutesUntil } from "@/lib/format";

@@ -1,5 +1,5 @@
 import { getRoomsForSelect, getStaffList } from "@/lib/queries";
-import { NewCleaningTaskForm } from "@/components/NewCleaningTaskForm";
+import { NewCleaningTaskForm } from "@/components/cleaning/NewCleaningTaskForm";
 
 export const dynamic = "force-dynamic";
 

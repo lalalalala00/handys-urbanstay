@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { IssueStatusBadge, UrgencyBadge } from "@/components/StatusBadges";
+import { IssueStatusBadge, UrgencyBadge } from "@/components/common/StatusBadges";
 import {
   IssueClassificationAction,
   IssueStatusAction,
-} from "@/components/IssueActions";
-import { IssueCrewAssignment } from "@/components/IssueCrewAssignment";
-import { IssueManagerAssignment } from "@/components/IssueManagerAssignment";
-import { IssueChat } from "@/components/IssueChat";
-import { RoomModalHeader } from "@/components/RoomModalHeader";
-import { ProgressTimeline } from "@/components/ProgressTimeline";
-import { ActionPanel, ActionSection } from "@/components/ActionPanel";
+} from "@/components/issue/IssueActions";
+import { IssueCrewAssignment } from "@/components/issue/IssueCrewAssignment";
+import { IssueManagerAssignment } from "@/components/issue/IssueManagerAssignment";
+import { IssueChat } from "@/components/issue/IssueChat";
+import { RoomModalHeader } from "@/components/common/RoomModalHeader";
+import { ProgressTimeline } from "@/components/common/ProgressTimeline";
+import { ActionPanel, ActionSection } from "@/components/common/ActionPanel";
 import {
   ISSUE_CATEGORY_LABEL,
   REPORTER_TYPE_LABEL,

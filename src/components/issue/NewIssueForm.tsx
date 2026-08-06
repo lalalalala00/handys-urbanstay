@@ -7,7 +7,7 @@ import {
   BranchRoomPicker,
   roomOptionLabel,
   type RoomOption,
-} from "@/components/BranchRoomPicker";
+} from "@/components/common/BranchRoomPicker";
 import type { IssueCategory, IssueUrgency } from "@/lib/types";
 
 const CATEGORIES = Object.keys(ISSUE_CATEGORY_LABEL) as IssueCategory[];

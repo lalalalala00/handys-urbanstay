@@ -6,7 +6,7 @@ import {
   RiskBadge,
   RoomStatusBadge,
   UrgencyBadge,
-} from "@/components/StatusBadges";
+} from "@/components/common/StatusBadges";
 import { getRoomDisplayStatus, type RoomDisplayStatus } from "@/lib/roomDisplayStatus";
 import {
   formatBuffer,
@@ -20,7 +20,7 @@ import type { CleaningTask, Room } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ActivityDrawer } from "@/components/dashboard/ActivityDrawer";
 import { CrewStatusCard } from "@/components/crew/CrewStatusCard";
-import { ClickableTableRow } from "@/components/ClickableTableRow";
+import { ClickableTableRow } from "@/components/common/ClickableTableRow";
 import {
   ArrowRightIcon,
   CheckCircleIcon,
@@ -30,7 +30,7 @@ import {
   IssueIcon,
   MessageIcon,
   RefreshIcon,
-} from "@/components/icons";
+} from "@/components/common/icons";
 
 export const dynamic = "force-dynamic";
 

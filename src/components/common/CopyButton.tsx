@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircleIcon, CopyIcon } from "@/components/icons";
+import { CheckCircleIcon, CopyIcon } from "@/components/common/icons";
 
 export function CopyButton({
   value,

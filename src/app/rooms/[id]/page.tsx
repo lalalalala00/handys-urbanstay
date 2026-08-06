@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getRoomDetail } from "@/lib/queries";
-import { RoomDetail } from "@/components/RoomDetail";
+import { RoomDetail } from "@/components/room/RoomDetail";
 
 export const dynamic = "force-dynamic";
 

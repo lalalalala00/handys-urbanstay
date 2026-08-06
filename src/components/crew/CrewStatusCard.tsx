@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRightIcon } from "@/components/icons";
+import { ArrowRightIcon } from "@/components/common/icons";
 
 export interface CrewStatusItem {
   staff: {
