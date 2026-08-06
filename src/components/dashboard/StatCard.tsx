@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ComponentType } from "react";
+import { CheckCircleIcon } from "@/components/common/icons";
 
 type Tone = "success" | "danger" | "warning" | "info" | "neutral";
 
@@ -18,6 +19,7 @@ export function StatCard({
   label,
   detail,
   href,
+  active = false,
 }: {
   icon: ComponentType<{ className?: string }>;
   tone: Tone;
@@ -25,11 +27,17 @@ export function StatCard({
   label: string;
   detail: string;
   href: string;
+  active?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="rounded-xl border border-card-border bg-card p-4 transition-colors hover:border-primary/40"
+      aria-current={active ? "true" : undefined}
+      className={`rounded-xl border p-4 transition-colors ${
+        active
+          ? "border-primary bg-primary/5 ring-2 ring-primary ring-offset-1 ring-offset-background"
+          : "border-card-border bg-card hover:border-primary/40"
+      }`}
     >
       <div className="flex items-center">
         <span
@@ -37,7 +45,12 @@ export function StatCard({
         >
           <Icon className="h-4.5 w-4.5 rounded-full" />
         </span>
-        <div className="mt-0.5 text-sm font-semibold ml-3">{label}</div>
+        <div className="mt-0.5 ml-3 flex items-center gap-1.5 text-sm font-semibold">
+          {label}
+          {active && (
+            <CheckCircleIcon className="h-3.5 w-3.5 shrink-0 text-primary" />
+          )}
+        </div>
       </div>
 
       <div className="mt-3 text-2xl font-semibold">{value}</div>

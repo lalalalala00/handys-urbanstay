@@ -20,6 +20,30 @@ export function DashboardIcon({ className }: IconProps) {
   );
 }
 
+export function GridIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.2" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.2" />
+      <rect x="13.5" y="13.5" width="7" height="7" rx="1.2" />
+    </svg>
+  );
+}
+
+export function ListIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <path d="M8 6.5h12.5" />
+      <path d="M8 12h12.5" />
+      <path d="M8 17.5h12.5" />
+      <path d="M3.5 6.5h.01" />
+      <path d="M3.5 12h.01" />
+      <path d="M3.5 17.5h.01" />
+    </svg>
+  );
+}
+
 export function CleaningIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

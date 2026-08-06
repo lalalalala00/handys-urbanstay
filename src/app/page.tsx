@@ -145,9 +145,8 @@ export default async function DashboardPage({
   const topWorkItems = priorityWorkItems.slice(0, 4);
 
   return (
-    <div className="mx-auto w-full max-w-[1480px]">
-      <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start">
-        <div className="flex min-w-0 flex-col gap-7">
+    <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start">
+      <div className="flex min-w-0 flex-col gap-7">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold tracking-tight">오늘의 운영 현황</h1>
@@ -443,11 +442,10 @@ export default async function DashboardPage({
       </DashboardSection>
         </div>
 
-        <aside className="hidden flex-col gap-5 xl:sticky xl:top-0 xl:flex">
-          <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
-          <RecentActivityCard activity={activity} activityHistory={activityHistory} />
-        </aside>
-      </div>
+      <aside className="hidden flex-col gap-5 xl:sticky xl:top-0 xl:flex">
+        <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
+        <RecentActivityCard activity={activity} activityHistory={activityHistory} />
+      </aside>
     </div>
   );
 }

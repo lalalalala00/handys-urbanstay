@@ -1,7 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { IssueStatusBadge, UrgencyBadge } from "@/components/common/StatusBadges";
+import {
+  IssueStatusBadge,
+  UrgencyBadge,
+} from "@/components/common/StatusBadges";
 import {
   IssueClassificationAction,
   IssueStatusAction,
@@ -102,7 +105,6 @@ export function IssueDetail({
               </Field>
             </div>
           </section>
-
           <section className="rounded-xl border border-primary/15 bg-primary/[0.04] p-5">
             <div className="flex items-center gap-2">
               <h2 className="text-sm font-semibold">AI 요약</h2>
@@ -135,7 +137,6 @@ export function IssueDetail({
               AI 요약은 참고용이며 실제 상황과 다를 수 있습니다.
             </p>
           </section>
-
           <section className="rounded-xl border border-black/10 bg-white/70 p-5 dark:border-white/10 dark:bg-white/[0.03]">
             <h2 className="text-sm font-semibold">신고 내용</h2>
 
@@ -153,7 +154,6 @@ export function IssueDetail({
               </div>
             )}
           </section>
-
           <IssueChat issue={issue} />
         </main>
 

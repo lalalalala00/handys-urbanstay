@@ -1,6 +1,8 @@
 import Link from "next/link";
+import type { ComponentType } from "react";
 import { getRoomsOverview, type RoomOverviewItem } from "@/lib/queries";
-import { RoomOverviewRow } from "@/components/room/RoomOverviewRow";
+import { RoomCard } from "@/components/room/RoomCard";
+import { RoomListRow } from "@/components/room/RoomListRow";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ROOM_DISPLAY_STATUS_LABEL } from "@/lib/labels";
 import { addressForBranch } from "@/lib/regions";
@@ -10,12 +12,16 @@ import {
   ChevronDownIcon,
   CleaningIcon,
   ClockIcon,
+  GridIcon,
+  ListIcon,
   LockIcon,
   RoomIcon,
 } from "@/components/common/icons";
 import type { RoomDisplayStatus } from "@/lib/roomDisplayStatus";
 
 export const dynamic = "force-dynamic";
+
+type ViewMode = "card" | "list";
 
 export default async function RoomsOverviewPage({
   searchParams,
@@ -24,14 +30,16 @@ export default async function RoomsOverviewPage({
     branch?: string;
     region?: string;
     status?: string;
+    view?: string;
   }>;
 }) {
-  const { branch, region, status } = await searchParams;
+  const { branch, region, status, view } = await searchParams;
 
   const { items, summary } = await getRoomsOverview({ branch, region });
 
   const activeStatus = isRoomDisplayStatus(status) ? status : undefined;
   const isNormalFilter = status === "normal";
+  const viewMode: ViewMode = view === "list" ? "list" : "card";
 
   const filteredItems = activeStatus
     ? items.filter((item) => item.displayStatus === activeStatus)
@@ -48,7 +56,15 @@ export default async function RoomsOverviewPage({
     if (activeStatus !== next) {
       params.set("status", next);
     }
+    if (view) params.set("view", view);
     return `/rooms?${params.toString()}`;
+  }
+
+  function hrefForView(next: ViewMode) {
+    const params = new URLSearchParams(baseParams);
+    if (status) params.set("status", status);
+    if (next !== "card") params.set("view", next);
+    return `/rooms${params.toString() ? `?${params.toString()}` : ""}`;
   }
 
   const groups = groupByBranch(filteredItems);
@@ -63,12 +79,29 @@ export default async function RoomsOverviewPage({
           </p>
         </div>
 
-        <Link
-          href={`/rooms/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
-          className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
-        >
-          객실 등록
-        </Link>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-0.5 rounded-lg border border-card-border bg-card p-1">
+            <ViewToggleButton
+              href={hrefForView("card")}
+              active={viewMode === "card"}
+              label="카드형으로 보기"
+              icon={GridIcon}
+            />
+            <ViewToggleButton
+              href={hrefForView("list")}
+              active={viewMode === "list"}
+              label="목록형으로 보기"
+              icon={ListIcon}
+            />
+          </div>
+
+          <Link
+            href={`/rooms/new${baseParams.toString() ? `?${baseParams.toString()}` : ""}`}
+            className="flex h-9 items-center justify-center rounded-lg bg-foreground px-4 text-sm font-medium text-background transition hover:opacity-90"
+          >
+            객실 등록
+          </Link>
+        </div>
       </header>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -79,6 +112,7 @@ export default async function RoomsOverviewPage({
           label="투숙 중"
           detail="현재 게스트가 있는 객실"
           href={hrefForStatus("occupied")}
+          active={activeStatus === "occupied"}
         />
         <StatCard
           icon={ClockIcon}
@@ -87,6 +121,7 @@ export default async function RoomsOverviewPage({
           label="입실 예정"
           detail="오늘 체크인 예정"
           href={hrefForStatus("checkin_due")}
+          active={activeStatus === "checkin_due"}
         />
         <StatCard
           icon={CleaningIcon}
@@ -95,6 +130,7 @@ export default async function RoomsOverviewPage({
           label="청소 필요"
           detail="체크아웃 후 작업 대기"
           href={hrefForStatus("dirty")}
+          active={activeStatus === "dirty"}
         />
         <StatCard
           icon={CheckCircleIcon}
@@ -103,6 +139,7 @@ export default async function RoomsOverviewPage({
           label="입실 가능"
           detail="청소·검수 완료"
           href={hrefForStatus("ready")}
+          active={activeStatus === "ready"}
         />
         <StatCard
           icon={LockIcon}
@@ -111,6 +148,7 @@ export default async function RoomsOverviewPage({
           label="판매 중지"
           detail="운영 불가능한 객실"
           href={hrefForStatus("blocked")}
+          active={activeStatus === "blocked"}
         />
       </section>
 
@@ -135,13 +173,37 @@ export default async function RoomsOverviewPage({
               </div>
             </summary>
 
-            <ul>
-              {branchItems.map((item) => (
-                <li key={item.room.id} className="border-t border-card-border first:border-t-0">
-                  <RoomOverviewRow item={item} />
-                </li>
-              ))}
-            </ul>
+            {viewMode === "card" ? (
+              <div className="flex flex-col gap-4 p-4">
+                {groupByFloor(branchItems).map(([floor, floorItems]) => (
+                  <div key={floor} className="flex flex-col gap-2.5">
+                    <h3 className="text-xs font-semibold text-subtext">{floor}층</h3>
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                      {floorItems.map((item) => (
+                        <RoomCard key={item.room.id} item={item} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div>
+                {groupByFloor(branchItems).map(([floor, floorItems]) => (
+                  <div key={floor}>
+                    <h3 className="border-t border-card-border bg-black/1.5 px-4 py-1.5 text-xs font-semibold text-subtext first:border-t-0 dark:bg-white/2">
+                      {floor}층
+                    </h3>
+                    <ul>
+                      {floorItems.map((item) => (
+                        <li key={item.room.id} className="border-t border-card-border">
+                          <RoomListRow item={item} />
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
           </details>
         ))}
 
@@ -158,6 +220,33 @@ export default async function RoomsOverviewPage({
         )}
       </section>
     </div>
+  );
+}
+
+function ViewToggleButton({
+  href,
+  active,
+  label,
+  icon: Icon,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-label={label}
+      aria-current={active ? "page" : undefined}
+      className={`flex h-7 w-7 items-center justify-center rounded-md transition-colors ${
+        active
+          ? "bg-foreground text-background"
+          : "text-subtext hover:bg-black/[0.035] hover:text-foreground dark:hover:bg-white/6"
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+    </Link>
   );
 }
 
@@ -191,4 +280,28 @@ function groupByBranch(items: RoomOverviewItem[]): [string, RoomOverviewItem[]][
     groups.set(item.room.branch, list);
   }
   return Array.from(groups.entries());
+}
+
+// Standard hotel numbering: all but the last two digits of the room number
+// are the floor (1205 -> 12층, 802 -> 8층).
+function floorForRoom(roomNumber: string): number {
+  const digits = roomNumber.replace(/\D/g, "");
+  const floorDigits = digits.slice(0, Math.max(digits.length - 2, 1));
+  return Number(floorDigits) || 0;
+}
+
+function groupByFloor(items: RoomOverviewItem[]): [number, RoomOverviewItem[]][] {
+  const groups = new Map<number, RoomOverviewItem[]>();
+  for (const item of items) {
+    const floor = floorForRoom(item.room.room_number);
+    const list = groups.get(floor) ?? [];
+    list.push(item);
+    groups.set(floor, list);
+  }
+  return Array.from(groups.entries())
+    .sort(([a], [b]) => b - a)
+    .map(([floor, floorItems]) => [
+      floor,
+      [...floorItems].sort((a, b) => a.room.room_number.localeCompare(b.room.room_number)),
+    ]);
 }
