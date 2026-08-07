@@ -52,7 +52,11 @@ export async function PATCH(
       );
     }
     nextStatus = body.status;
-  } else if (current.status === "new" && body.assigneeId && body.status === undefined) {
+  } else if (
+    (current.status === "new" || current.status === "checking") &&
+    body.assigneeId &&
+    body.status === undefined
+  ) {
     nextStatus = "assigned";
   }
 

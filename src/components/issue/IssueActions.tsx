@@ -196,13 +196,12 @@ export function IssueStatusAction({
         steps={ISSUE_STEPS}
         onSelect={changeStatus}
         pending={pending}
+        emptyMessage={
+          status === "new" || status === "checking"
+            ? "크루를 배정하면 자동으로 다음 단계로 전환됩니다."
+            : "모든 처리 단계가 완료되었습니다."
+        }
       />
-
-      {allowedNext.length === 0 && (
-        <p className="text-xs leading-5 text-gray-500 dark:text-gray-400">
-          모든 처리 단계가 완료되었습니다.
-        </p>
-      )}
 
       {error && (
         <p className="text-xs text-red-600 dark:text-red-400">{error}</p>

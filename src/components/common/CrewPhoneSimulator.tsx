@@ -34,16 +34,22 @@ export function CrewPhoneSimulator({
   const showToast = useToast();
   const [step, setStep] = useState<Step>("confirm");
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function start() {
     setPending(true);
+    setError(null);
     try {
       const res = await fetch(patchUrl, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(patchBody),
       });
-      if (!res.ok) return;
+      const json = await res.json();
+      if (!res.ok) {
+        setError(json.error ?? "요청에 실패했습니다.");
+        return;
+      }
       showToast(successToast);
       router.refresh();
       onDone();
@@ -94,14 +100,30 @@ export function CrewPhoneSimulator({
                     <p className="mt-1 text-2xl font-bold">{room.room_number}호</p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={start}
-                  className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
-                >
-                  {pending ? startingLabel : startLabel}
-                </button>
+                <div className="space-y-2">
+                  {error && (
+                    <p className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-950/30 dark:text-red-400">
+                      {error}
+                    </p>
+                  )}
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={start}
+                    className="h-12 w-full rounded-xl bg-primary text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-40"
+                  >
+                    {pending ? startingLabel : startLabel}
+                  </button>
+                  {error && (
+                    <button
+                      type="button"
+                      onClick={onDone}
+                      className="w-full text-xs font-medium text-gray-500 underline-offset-4 hover:underline dark:text-gray-400"
+                    >
+                      닫기
+                    </button>
+                  )}
+                </div>
               </>
             )}
           </div>

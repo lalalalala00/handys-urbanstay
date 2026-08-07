@@ -9,6 +9,7 @@ export function StatusChangeButtons<T extends string>({
   steps,
   onSelect,
   pending,
+  emptyMessage = "더 이상 변경할 수 있는 상태가 없습니다.",
 }: {
   current: T;
   allowedNext: T[];
@@ -16,6 +17,7 @@ export function StatusChangeButtons<T extends string>({
   steps: T[];
   onSelect: (next: T) => void;
   pending: boolean;
+  emptyMessage?: string;
 }) {
   const currentIndex = steps.indexOf(current);
 
@@ -32,7 +34,7 @@ export function StatusChangeButtons<T extends string>({
   if (allowedNext.length === 0) {
     return (
       <p className="rounded-lg border border-dashed border-black/10 px-3 py-3 text-xs text-gray-500 dark:border-white/10 dark:text-gray-400">
-        더 이상 변경할 수 있는 상태가 없습니다.
+        {emptyMessage}
       </p>
     );
   }

@@ -45,6 +45,15 @@ export function IssueDetail({
   const defaultManager = room.property?.manager ?? null;
   const manager = issue.manager ?? defaultManager;
 
+  // Crew can technically be assigned (assignee_id set) before the workflow
+  // status has actually advanced to "assigned" or later — e.g. seeded data,
+  // or a reassignment while the issue sits earlier in the pipeline. Gate the
+  // panel's collapsed/complete state on status progress, not just presence
+  // of an assignee, so it doesn't read as "done" ahead of where the issue
+  // actually is.
+  const crewStageReached =
+    ISSUE_STEPS.indexOf(issue.status) >= ISSUE_STEPS.indexOf("assigned");
+
   const [confirmingCrewName, setConfirmingCrewName] = useState<string | null>(
     null
   );
@@ -168,7 +177,7 @@ export function IssueDetail({
               number={1}
               title="크루 배정"
               description="현장 확인 또는 조치를 진행할 크루를 지정합니다."
-              complete={Boolean(issue.assignee_id)}
+              complete={crewStageReached}
               summary={`크루 배정 · ${issue.assignee?.name ?? "미배정"}`}
             >
               <IssueCrewAssignment
