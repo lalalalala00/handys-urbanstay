@@ -7,7 +7,10 @@ import {
   RoomStatusBadge,
   UrgencyBadge,
 } from "@/components/common/StatusBadges";
-import { getRoomDisplayStatus, type RoomDisplayStatus } from "@/lib/roomDisplayStatus";
+import {
+  getRoomDisplayStatus,
+  type RoomDisplayStatus,
+} from "@/lib/roomDisplayStatus";
 import {
   formatBuffer,
   formatDateHeader,
@@ -35,7 +38,6 @@ import { ActivityDrawer } from "@/components/dashboard/ActivityDrawer";
 import { CrewStatusCard } from "@/components/crew/CrewStatusCard";
 import { ClickableTableRow } from "@/components/common/ClickableTableRow";
 import {
-  ArrowRightIcon,
   CheckCircleIcon,
   CleaningIcon,
   ClockIcon,
@@ -47,10 +49,15 @@ import {
 
 export const dynamic = "force-dynamic";
 
-function nextScheduleText(room: Room, displayStatus: RoomDisplayStatus): string {
+function nextScheduleText(
+  room: Room,
+  displayStatus: RoomDisplayStatus
+): string {
   if (displayStatus === "occupied") {
     return room.checkout_at
-      ? `${relativeOperationDay(room.checkout_at)} ${formatTime(new Date(room.checkout_at))} 퇴실`
+      ? `${relativeOperationDay(room.checkout_at)} ${formatTime(
+          new Date(room.checkout_at)
+        )} 퇴실`
       : "퇴실 일정 없음";
   }
   if (displayStatus === "blocked") return room.operation_note ?? "점검 중";
@@ -97,295 +104,365 @@ export default async function DashboardPage({
   return (
     <div className="grid gap-7 xl:grid-cols-[minmax(0,1fr)_18rem] xl:items-start">
       <div className="flex min-w-0 flex-col gap-7">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">오늘의 운영 현황</h1>
-          <p className="mt-1 text-sm text-subtext">
-            {formatDateHeader(now)} · 우선순위가 높은 작업부터 확인하세요.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-subtext">{formatTime(now)} 기준</span>
-          <Link
-            href={withFilter("/")}
-            className="flex items-center gap-1.5 rounded-lg border border-card-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:border-primary/40"
-          >
-            <RefreshIcon className="h-3.5 w-3.5" />
-            새로고침
-          </Link>
-        </div>
-      </header>
-
-      <section aria-label="오늘의 핵심 운영 지표" className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
-        <StatCard
-          icon={CheckCircleIcon}
-          tone="success"
-          value={summary.normal}
-          label="정상 운영"
-          detail={`전체 객실 중 ${
-            totalRooms > 0 ? Math.round((summary.normal / totalRooms) * 100) : 0
-          }%`}
-          href={withFilterParams("/rooms", { status: "normal" })}
-        />
-        <StatCard
-          icon={IssueIcon}
-          tone="danger"
-          value={summary.immediate}
-          label="즉시 처리"
-          detail="임박·긴급·지연 작업"
-          href={priorityHref}
-        />
-        <StatCard
-          icon={ClockIcon}
-          tone="warning"
-          value={summary.inspection}
-          label="검수 대기"
-          detail="운영자 확인 필요"
-          href={withFilterParams("/cleaning", { status: "inspection" })}
-        />
-        <StatCard
-          icon={CrewIcon}
-          tone="info"
-          value={summary.unassigned}
-          label="미배정"
-          detail={`청소 ${summary.unassignedCleaning}건 · 이슈 ${summary.unassignedIssues}건`}
-          href={withFilter("/unassigned")}
-        />
-        <StatCard
-          icon={MessageIcon}
-          tone="info"
-          value={summary.guestInquiries}
-          label="게스트 문의"
-          detail="미처리 게스트 접수"
-          href={withFilterParams("/issues", { reporter: "guest" })}
-        />
-      </section>
-
-      <section>
-        <SectionHeading
-          icon={<IssueIcon className="h-4 w-4" />}
-          title="긴급 작업"
-          description="청소와 운영 이슈를 하나의 우선순위로 정렬한 Top 4"
-          count={summary.immediate}
-          href={priorityHref}
-        />
-
-        {topWorkItems.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {topWorkItems.map((item) => {
-              const tone = WORK_TONE_CLASSES[workTone(item)];
-              const Icon = item.kind === "cleaning" ? CleaningIcon : IssueIcon;
-              return (
-                <article
-                  key={item.id}
-                  className={`flex min-h-[142px] flex-col justify-between rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${tone.card}`}
-                >
-                  <div>
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="min-w-0 truncate text-xs font-medium text-subtext">
-                        {item.room.branch}
-                      </span>
-                      <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.badge}`}>
-                        {workBadge(item)}
-                      </span>
-                    </div>
-                    <Link
-                      href={`/rooms/${item.room.id}`}
-                      className="mt-1 block text-sm font-bold hover:underline"
-                    >
-                      {item.room.room_number}호
-                    </Link>
-                    <p className="mt-3 flex items-center gap-1.5 text-xs text-foreground/75">
-                      <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${tone.icon}`}>
-                        <Icon className="h-3 w-3" />
-                      </span>
-                      <span className="truncate">{workSummary(item)}</span>
-                    </p>
-                  </div>
-                  <div className="mt-3 flex items-center justify-between gap-3">
-                    <span className="truncate text-xs text-subtext">
-                      {workAssigneeName(item)}
-                    </span>
-                    <Link
-                      href={workHref(item)}
-                      className={`inline-flex h-8 shrink-0 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition-colors ${tone.button}`}
-                    >
-                      {workActionLabel(item)}
-                    </Link>
-                  </div>
-                </article>
-              );
-            })}
+        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">
+              오늘의 운영 현황
+            </h1>
+            <p className="mt-1 text-sm text-subtext">
+              {formatDateHeader(now)} · 우선순위가 높은 작업부터 확인하세요.
+            </p>
           </div>
-        ) : (
-          <div className="flex min-h-28 items-center justify-center rounded-xl border border-success-border bg-success-bg text-sm font-medium text-success-text">
-            지금 바로 처리할 긴급 작업이 없습니다.
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-subtext">{formatTime(now)} 기준</span>
+            <Link
+              href={withFilter("/")}
+              className="flex items-center gap-1.5 rounded-lg border border-card-border bg-card px-3 py-2 text-xs font-medium transition-colors hover:border-primary/40"
+            >
+              <RefreshIcon className="h-3.5 w-3.5" />
+              새로고침
+            </Link>
           </div>
-        )}
-      </section>
+        </header>
 
-      <div className="flex flex-col gap-5 xl:hidden">
-        <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
-        <RecentActivityCard activity={activity} activityHistory={activityHistory} />
-      </div>
+        <section
+          aria-label="오늘의 핵심 운영 지표"
+          className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5"
+        >
+          <StatCard
+            icon={CheckCircleIcon}
+            tone="success"
+            value={summary.normal}
+            label="정상 운영"
+            detail={`전체 객실 중 ${
+              totalRooms > 0
+                ? Math.round((summary.normal / totalRooms) * 100)
+                : 0
+            }%`}
+            href={withFilterParams("/rooms", { status: "normal" })}
+          />
+          <StatCard
+            icon={IssueIcon}
+            tone="danger"
+            value={summary.immediate}
+            label="즉시 처리"
+            detail="임박·긴급·지연 작업"
+            href={priorityHref}
+          />
+          <StatCard
+            icon={ClockIcon}
+            tone="warning"
+            value={summary.inspection}
+            label="검수 대기"
+            detail="운영자 확인 필요"
+            href={withFilterParams("/cleaning", { status: "inspection" })}
+          />
+          <StatCard
+            icon={CrewIcon}
+            tone="info"
+            value={summary.unassigned}
+            label="미배정"
+            detail={`청소 ${summary.unassignedCleaning}건 · 이슈 ${summary.unassignedIssues}건`}
+            href={withFilter("/unassigned")}
+          />
+          <StatCard
+            icon={MessageIcon}
+            tone="info"
+            value={summary.guestInquiries}
+            label="게스트 문의"
+            detail="미처리 게스트 접수"
+            href={withFilterParams("/issues", { reporter: "guest" })}
+          />
+        </section>
 
-      <DashboardSection
-        title="객실 현황"
-        description="지금 운영 가능한 객실인지 확인합니다."
-        href={withFilter("/rooms")}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-black/[0.02] text-left text-xs text-subtext">
-              <tr>
-                <th className="px-4 py-3 font-medium">객실</th>
-                <th className="px-4 py-3 font-medium">운영 상태</th>
-                <th className="px-4 py-3 font-medium">다음 일정</th>
-                <th className="px-4 py-3 font-medium">담당자</th>
-              </tr>
-            </thead>
-            <tbody>
-              {roomsByPriority.slice(0, 5).map(({ room, task }) => {
-                const displayStatus = getRoomDisplayStatus(room, task);
+        <section>
+          <SectionHeading
+            icon={<IssueIcon className="h-4 w-4" />}
+            title="긴급 작업"
+            description=""
+            count={summary.immediate}
+            href={priorityHref}
+          />
+
+          {topWorkItems.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {topWorkItems.map((item) => {
+                const tone = WORK_TONE_CLASSES[workTone(item)];
+                const Icon =
+                  item.kind === "cleaning" ? CleaningIcon : IssueIcon;
                 return (
-                  <ClickableTableRow
-                    key={room.id}
-                    href={`/rooms/${room.id}`}
-                    className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
+                  <article
+                    key={item.id}
+                    className={`flex min-h-[142px] flex-col justify-between rounded-2xl border p-4 transition hover:-translate-y-0.5 hover:shadow-sm ${tone.card}`}
                   >
-                    <td className="px-4 py-3">
-                      <Link
-                        href={`/rooms/${room.id}`}
-                        className="flex items-center gap-1.5 font-semibold hover:text-primary"
-                      >
+                    <div>
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 truncate text-xs font-medium text-subtext">
+                          {item.room.branch}
+                        </span>
                         <span
-                          aria-hidden="true"
-                          className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-                            room.operation_status === "blocked"
-                              ? "bg-danger-text"
-                              : "bg-success-text"
-                          }`}
-                        />
-                        {room.branch} · {room.room_number}호
+                          className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${tone.badge}`}
+                        >
+                          {workBadge(item)}
+                        </span>
+                      </div>
+                      <Link
+                        href={`/rooms/${item.room.id}`}
+                        className="mt-1 block text-sm font-bold hover:underline"
+                      >
+                        {item.room.room_number}호
                       </Link>
-                    </td>
-                    <td className="px-4 py-3"><RoomStatusBadge status={displayStatus} /></td>
-                    <td className="px-4 py-3 text-subtext">{nextScheduleText(room, displayStatus)}</td>
-                    <td className="px-4 py-3 text-subtext">{assigneeName(task)}</td>
-                  </ClickableTableRow>
+                      <p className="mt-3 flex items-center gap-1.5 text-xs text-foreground/75">
+                        <span
+                          className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${tone.icon}`}
+                        >
+                          <Icon className="h-3 w-3" />
+                        </span>
+                        <span className="truncate">{workSummary(item)}</span>
+                      </p>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-3">
+                      <span className="truncate text-xs text-subtext">
+                        {workAssigneeName(item)}
+                      </span>
+                      <Link
+                        href={workHref(item)}
+                        className={`inline-flex h-8 shrink-0 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition-colors ${tone.button}`}
+                      >
+                        {workActionLabel(item)}
+                      </Link>
+                    </div>
+                  </article>
                 );
               })}
-              {roomsByPriority.length === 0 && <EmptyTable colSpan={4} text="객실이 없습니다." />}
-            </tbody>
-          </table>
-        </div>
-      </DashboardSection>
+            </div>
+          ) : (
+            <div className="flex min-h-28 items-center justify-center rounded-xl border border-success-border bg-success-bg text-sm font-medium text-success-text">
+              지금 바로 처리할 긴급 작업이 없습니다.
+            </div>
+          )}
+        </section>
 
-      <DashboardSection
-        title="청소 작업"
-        description="배정부터 검수까지 청소 진행 단계를 확인합니다."
-        count={cleaningTasksByPriority.length}
-        href={withFilter("/cleaning")}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[720px] text-sm">
-            <thead className="bg-black/[0.02] text-left text-xs text-subtext">
-              <tr>
-                <th className="px-4 py-3 font-medium">객실</th>
-                <th className="px-4 py-3 font-medium">청소 상태</th>
-                <th className="px-4 py-3 font-medium">담당 크루</th>
-                <th className="px-4 py-3 font-medium">여유 시간</th>
-                <th className="w-24 px-4 py-3 font-medium"><span className="sr-only">액션</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {cleaningTasksByPriority.slice(0, 5).map(({ room, task, priority }) => (
-                <ClickableTableRow
-                  key={task!.id}
-                  href={`/cleaning/${task!.id}`}
-                  className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
-                >
-                  <td className="px-4 py-3">
-                    <Link href={`/rooms/${room.id}`} className="font-semibold hover:text-primary">
-                      {room.branch} · {room.room_number}호
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3"><CleaningStatusBadge status={task!.status} /></td>
-                  <td className="px-4 py-3 text-subtext">{assigneeName(task)}</td>
-                  <td className="px-4 py-3"><RiskBadge level={priority.riskLevel} label={formatBuffer(priority.bufferMinutes)} /></td>
-                  <td className="px-4 py-3 text-right">
-                    {cleaningNextActionLabel(task!.status) && (
-                      <RowLink
-                        href={`/cleaning/${task!.id}`}
-                        label={cleaningNextActionLabel(task!.status)!}
-                      />
-                    )}
-                  </td>
-                </ClickableTableRow>
-              ))}
-              {cleaningTasksByPriority.length === 0 && <EmptyTable colSpan={5} text="처리할 청소 작업이 없습니다." />}
-            </tbody>
-          </table>
+        <div className="flex flex-col gap-5 xl:hidden">
+          <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
+          <RecentActivityCard
+            activity={activity}
+            activityHistory={activityHistory}
+          />
         </div>
-      </DashboardSection>
 
-      <DashboardSection
-        title="운영 이슈"
-        description="시설 및 게스트 문제의 처리 상황을 확인합니다."
-        count={openIssues.length}
-        href={withFilter("/issues")}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
-            <thead className="bg-black/[0.02] text-left text-xs text-subtext">
-              <tr>
-                <th className="px-4 py-3 font-medium">객실</th>
-                <th className="px-4 py-3 font-medium">유형</th>
-                <th className="px-4 py-3 font-medium">이슈 내용</th>
-                <th className="px-4 py-3 font-medium">긴급도</th>
-                <th className="px-4 py-3 font-medium">상태</th>
-                <th className="w-24 px-4 py-3 font-medium"><span className="sr-only">액션</span></th>
-              </tr>
-            </thead>
-            <tbody>
-              {openIssues.slice(0, 5).map((issue) => (
-                <ClickableTableRow
-                  key={issue.id}
-                  href={`/issues/${issue.id}`}
-                  className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
-                >
-                  <td className="px-4 py-3 font-semibold whitespace-nowrap">
-                    <Link
-                      href={issue.room ? `/rooms/${issue.room.id}` : `/issues/${issue.id}`}
-                      className="hover:text-primary"
+        <DashboardSection
+          title="객실 현황"
+          description="지금 운영 가능한 객실인지 확인합니다."
+          href={withFilter("/rooms")}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-black/[0.02] text-left text-xs text-subtext">
+                <tr>
+                  <th className="px-4 py-3 font-medium">객실</th>
+                  <th className="px-4 py-3 font-medium">운영 상태</th>
+                  <th className="px-4 py-3 font-medium">다음 일정</th>
+                  <th className="px-4 py-3 font-medium">담당자</th>
+                </tr>
+              </thead>
+              <tbody>
+                {roomsByPriority.slice(0, 5).map(({ room, task }) => {
+                  const displayStatus = getRoomDisplayStatus(room, task);
+                  return (
+                    <ClickableTableRow
+                      key={room.id}
+                      href={`/rooms/${room.id}`}
+                      className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
                     >
-                      {issue.room?.branch} · {issue.room?.room_number}호
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-subtext whitespace-nowrap">{ISSUE_CATEGORY_LABEL[issue.category]}</td>
-                  <td className="max-w-md px-4 py-3"><p className="line-clamp-1 text-foreground/75">{issue.description}</p></td>
-                  <td className="px-4 py-3"><UrgencyBadge urgency={issue.urgency} /></td>
-                  <td className="px-4 py-3"><IssueStatusBadge status={issue.status} /></td>
-                  <td className="px-4 py-3 text-right">
-                    {issueNextActionLabel(issue.status, Boolean(issue.assignee)) && (
-                      <RowLink
-                        href={`/issues/${issue.id}`}
-                        label={issueNextActionLabel(issue.status, Boolean(issue.assignee))!}
-                      />
-                    )}
-                  </td>
-                </ClickableTableRow>
-              ))}
-              {openIssues.length === 0 && <EmptyTable colSpan={6} text="미처리 운영 이슈가 없습니다." />}
-            </tbody>
-          </table>
-        </div>
-      </DashboardSection>
-        </div>
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/rooms/${room.id}`}
+                          className="flex items-center gap-1.5 font-semibold hover:text-primary"
+                        >
+                          <span
+                            aria-hidden="true"
+                            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
+                              room.operation_status === "blocked"
+                                ? "bg-danger-text"
+                                : "bg-success-text"
+                            }`}
+                          />
+                          {room.branch} · {room.room_number}호
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <RoomStatusBadge status={displayStatus} />
+                      </td>
+                      <td className="px-4 py-3 text-subtext">
+                        {nextScheduleText(room, displayStatus)}
+                      </td>
+                      <td className="px-4 py-3 text-subtext">
+                        {assigneeName(task)}
+                      </td>
+                    </ClickableTableRow>
+                  );
+                })}
+                {roomsByPriority.length === 0 && (
+                  <EmptyTable colSpan={4} text="객실이 없습니다." />
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DashboardSection>
+
+        <DashboardSection
+          title="청소 작업"
+          description="배정부터 검수까지 청소 진행 단계를 확인합니다."
+          count={cleaningTasksByPriority.length}
+          href={withFilter("/cleaning")}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[720px] text-sm">
+              <thead className="bg-black/[0.02] text-left text-xs text-subtext">
+                <tr>
+                  <th className="px-4 py-3 font-medium">객실</th>
+                  <th className="px-4 py-3 font-medium">청소 상태</th>
+                  <th className="px-4 py-3 font-medium">담당 크루</th>
+                  <th className="px-4 py-3 font-medium">여유 시간</th>
+                  <th className="w-24 px-4 py-3 font-medium">
+                    <span className="sr-only">액션</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {cleaningTasksByPriority
+                  .slice(0, 5)
+                  .map(({ room, task, priority }) => (
+                    <ClickableTableRow
+                      key={task!.id}
+                      href={`/cleaning/${task!.id}`}
+                      className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
+                    >
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/rooms/${room.id}`}
+                          className="font-semibold hover:text-primary"
+                        >
+                          {room.branch} · {room.room_number}호
+                        </Link>
+                      </td>
+                      <td className="px-4 py-3">
+                        <CleaningStatusBadge status={task!.status} />
+                      </td>
+                      <td className="px-4 py-3 text-subtext">
+                        {assigneeName(task)}
+                      </td>
+                      <td className="px-4 py-3">
+                        <RiskBadge
+                          level={priority.riskLevel}
+                          label={formatBuffer(priority.bufferMinutes)}
+                        />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        {cleaningNextActionLabel(task!.status) && (
+                          <RowLink
+                            href={`/cleaning/${task!.id}`}
+                            label={cleaningNextActionLabel(task!.status)!}
+                          />
+                        )}
+                      </td>
+                    </ClickableTableRow>
+                  ))}
+                {cleaningTasksByPriority.length === 0 && (
+                  <EmptyTable colSpan={5} text="처리할 청소 작업이 없습니다." />
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DashboardSection>
+
+        <DashboardSection
+          title="운영 이슈"
+          description="시설 및 게스트 문제의 처리 상황을 확인합니다."
+          count={openIssues.length}
+          href={withFilter("/issues")}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[820px] text-sm">
+              <thead className="bg-black/[0.02] text-left text-xs text-subtext">
+                <tr>
+                  <th className="px-4 py-3 font-medium">객실</th>
+                  <th className="px-4 py-3 font-medium">유형</th>
+                  <th className="px-4 py-3 font-medium">이슈 내용</th>
+                  <th className="px-4 py-3 font-medium">긴급도</th>
+                  <th className="px-4 py-3 font-medium">상태</th>
+                  <th className="w-24 px-4 py-3 font-medium">
+                    <span className="sr-only">액션</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {openIssues.slice(0, 5).map((issue) => (
+                  <ClickableTableRow
+                    key={issue.id}
+                    href={`/issues/${issue.id}`}
+                    className="border-t border-card-border transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.025]"
+                  >
+                    <td className="px-4 py-3 font-semibold whitespace-nowrap">
+                      <Link
+                        href={
+                          issue.room
+                            ? `/rooms/${issue.room.id}`
+                            : `/issues/${issue.id}`
+                        }
+                        className="hover:text-primary"
+                      >
+                        {issue.room?.branch} · {issue.room?.room_number}호
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-subtext whitespace-nowrap">
+                      {ISSUE_CATEGORY_LABEL[issue.category]}
+                    </td>
+                    <td className="max-w-md px-4 py-3">
+                      <p className="line-clamp-1 text-foreground/75">
+                        {issue.description}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <UrgencyBadge urgency={issue.urgency} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <IssueStatusBadge status={issue.status} />
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {issueNextActionLabel(
+                        issue.status,
+                        Boolean(issue.assignee)
+                      ) && (
+                        <RowLink
+                          href={`/issues/${issue.id}`}
+                          label={
+                            issueNextActionLabel(
+                              issue.status,
+                              Boolean(issue.assignee)
+                            )!
+                          }
+                        />
+                      )}
+                    </td>
+                  </ClickableTableRow>
+                ))}
+                {openIssues.length === 0 && (
+                  <EmptyTable colSpan={6} text="미처리 운영 이슈가 없습니다." />
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DashboardSection>
+      </div>
 
       <aside className="hidden flex-col gap-5 xl:sticky xl:top-0 xl:flex">
         <CrewStatusCard crew={crew} href={withFilter("/cleaning")} />
-        <RecentActivityCard activity={activity} activityHistory={activityHistory} />
+        <RecentActivityCard
+          activity={activity}
+          activityHistory={activityHistory}
+        />
       </aside>
     </div>
   );
@@ -407,9 +484,13 @@ function SectionHeading({
   return (
     <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
-        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-danger-bg text-danger-text">{icon}</span>
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-danger-bg text-danger-text">
+          {icon}
+        </span>
         <h2 className="text-base font-semibold">{title}</h2>
-        <span className="rounded-full bg-danger-bg px-2 py-0.5 text-[11px] font-semibold text-danger-text">{count}</span>
+        <span className="rounded-full bg-danger-bg px-2 py-0.5 text-[11px] font-semibold text-danger-text">
+          {count}
+        </span>
       </div>
       <div className="flex items-center gap-3">
         <p className="text-xs text-subtext">{description}</p>
@@ -418,7 +499,7 @@ function SectionHeading({
             href={href}
             className="flex shrink-0 items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
           >
-            전체 보기 <ArrowRightIcon className="h-3.5 w-3.5" />
+            전체 보기
           </Link>
         )}
       </div>
@@ -445,15 +526,22 @@ function DashboardSection({
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-base font-semibold">{title}</h2>
-            {count !== undefined && <span className="text-sm text-subtext">{count}</span>}
+            {count !== undefined && (
+              <span className="text-sm text-subtext">{count}</span>
+            )}
           </div>
           <p className="mt-0.5 text-xs text-subtext">{description}</p>
         </div>
-        <Link href={href} className="flex shrink-0 items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary">
-          전체 보기 <ArrowRightIcon className="h-3.5 w-3.5" />
+        <Link
+          href={href}
+          className="flex shrink-0 items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
+        >
+          전체 보기
         </Link>
       </div>
-      <div className="overflow-hidden rounded-xl border border-card-border bg-card">{children}</div>
+      <div className="overflow-hidden rounded-xl border border-card-border bg-card">
+        {children}
+      </div>
     </section>
   );
 }
@@ -494,7 +582,9 @@ function RecentActivityCard({
               </span>{" "}
               {item.action}
             </span>
-            <span className="shrink-0 text-subtext">{formatTime(item.time)}</span>
+            <span className="shrink-0 text-subtext">
+              {formatTime(item.time)}
+            </span>
           </li>
         ))}
         {activity.length === 0 && (
@@ -509,7 +599,10 @@ function RecentActivityCard({
 
 function RowLink({ href, label = "보기" }: { href: string; label?: string }) {
   return (
-    <Link href={href} className="inline-flex text-xs font-semibold text-primary hover:underline">
+    <Link
+      href={href}
+      className="inline-flex text-xs font-semibold text-primary hover:underline"
+    >
       {label}
     </Link>
   );
@@ -518,7 +611,12 @@ function RowLink({ href, label = "보기" }: { href: string; label?: string }) {
 function EmptyTable({ colSpan, text }: { colSpan: number; text: string }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-subtext">{text}</td>
+      <td
+        colSpan={colSpan}
+        className="px-4 py-10 text-center text-sm text-subtext"
+      >
+        {text}
+      </td>
     </tr>
   );
 }

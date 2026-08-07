@@ -105,10 +105,14 @@ export function CleaningTaskDetail({
                 <RoomStatusBadge status={getRoomDisplayStatus(room, task)} />
               </Field>
               <Field label="여유 시간">
-                <RiskBadge
-                  level={priority.riskLevel}
-                  label={formatBuffer(priority.bufferMinutes)}
-                />
+                {task.status === "done" ? (
+                  <span className="text-sm text-foreground/70">-</span>
+                ) : (
+                  <RiskBadge
+                    level={priority.riskLevel}
+                    label={formatBuffer(priority.bufferMinutes)}
+                  />
+                )}
               </Field>
               <Field label="예상 소요 시간"> {task.estimated_minutes}분 </Field>
               <Field label="배정 크루">{task.assignee?.name ?? "미배정"}</Field>

@@ -310,7 +310,7 @@ function CleaningStatusCard({
             </Field>
           </div>
 
-          {hasNextCheckin && priority.bufferMinutes !== null && (
+          {task.status !== "done" && hasNextCheckin && priority.bufferMinutes !== null && (
             <CountdownBanner
               tone={priority.riskLevel === "urgent" ? "danger" : "warning"}
             >

@@ -9,7 +9,10 @@ import {
 import { formatBuffer, formatDateTime } from "@/lib/format";
 import { ISSUE_CATEGORY_LABEL } from "@/lib/labels";
 import { ClickableTableRow } from "@/components/common/ClickableTableRow";
-import { ArrowRightIcon, CleaningIcon, IssueIcon } from "@/components/common/icons";
+import {
+  CleaningIcon,
+  IssueIcon,
+} from "@/components/common/icons";
 
 export const dynamic = "force-dynamic";
 
@@ -51,13 +54,15 @@ export default async function UnassignedWorkPage({
           <div className="flex items-center gap-2">
             <CleaningIcon className="h-4 w-4" />
             <h2 className="text-base font-semibold">미배정 청소</h2>
-            <span className="text-sm text-subtext">{unassignedTasks.length}</span>
+            <span className="text-sm text-subtext">
+              {unassignedTasks.length}
+            </span>
           </div>
           <Link
             href={withFilter("/cleaning?status=unassigned")}
             className="flex shrink-0 items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
           >
-            전체 보기 <ArrowRightIcon className="h-3.5 w-3.5" />
+            전체 보기
           </Link>
         </div>
 
@@ -70,7 +75,9 @@ export default async function UnassignedWorkPage({
                   <th className="px-4 py-3 font-medium">청소 상태</th>
                   <th className="px-4 py-3 font-medium">체크아웃</th>
                   <th className="px-4 py-3 font-medium">여유 시간</th>
-                  <th className="w-24 px-4 py-3 font-medium"><span className="sr-only">액션</span></th>
+                  <th className="w-24 px-4 py-3 font-medium">
+                    <span className="sr-only">액션</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -82,17 +89,35 @@ export default async function UnassignedWorkPage({
                   >
                     <td className="px-4 py-3">
                       <Link
-                        href={task.room ? `/rooms/${task.room.id}` : `/cleaning/${task.id}`}
+                        href={
+                          task.room
+                            ? `/rooms/${task.room.id}`
+                            : `/cleaning/${task.id}`
+                        }
                         className="font-semibold hover:text-primary"
                       >
-                        {task.room ? `${task.room.branch} · ${task.room.room_number}호` : "객실 정보 없음"}
+                        {task.room
+                          ? `${task.room.branch} · ${task.room.room_number}호`
+                          : "객실 정보 없음"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3"><CleaningStatusBadge status={task.status} /></td>
-                    <td className="px-4 py-3 text-subtext">{formatDateTime(task.room?.checkout_at ?? null)}</td>
-                    <td className="px-4 py-3"><RiskBadge level={task.priority.riskLevel} label={formatBuffer(task.priority.bufferMinutes)} /></td>
+                    <td className="px-4 py-3">
+                      <CleaningStatusBadge status={task.status} />
+                    </td>
+                    <td className="px-4 py-3 text-subtext">
+                      {formatDateTime(task.room?.checkout_at ?? null)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <RiskBadge
+                        level={task.priority.riskLevel}
+                        label={formatBuffer(task.priority.bufferMinutes)}
+                      />
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/cleaning/${task.id}`} className="inline-flex text-xs font-semibold text-primary hover:underline">
+                      <Link
+                        href={`/cleaning/${task.id}`}
+                        className="inline-flex text-xs font-semibold text-primary hover:underline"
+                      >
                         배정하기
                       </Link>
                     </td>
@@ -100,7 +125,10 @@ export default async function UnassignedWorkPage({
                 ))}
                 {unassignedTasks.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-4 py-10 text-center text-sm text-subtext">
+                    <td
+                      colSpan={5}
+                      className="px-4 py-10 text-center text-sm text-subtext"
+                    >
                       미배정 청소 작업이 없습니다.
                     </td>
                   </tr>
@@ -116,13 +144,15 @@ export default async function UnassignedWorkPage({
           <div className="flex items-center gap-2">
             <IssueIcon className="h-4 w-4" />
             <h2 className="text-base font-semibold">미배정 이슈</h2>
-            <span className="text-sm text-subtext">{unassignedIssues.length}</span>
+            <span className="text-sm text-subtext">
+              {unassignedIssues.length}
+            </span>
           </div>
           <Link
             href={withFilter("/issues")}
             className="flex shrink-0 items-center gap-1 text-xs font-medium text-subtext transition-colors hover:text-primary"
           >
-            전체 보기 <ArrowRightIcon className="h-3.5 w-3.5" />
+            전체 보기
           </Link>
         </div>
 
@@ -136,7 +166,9 @@ export default async function UnassignedWorkPage({
                   <th className="px-4 py-3 font-medium">긴급도</th>
                   <th className="px-4 py-3 font-medium">신고 내용</th>
                   <th className="px-4 py-3 font-medium">상태</th>
-                  <th className="w-24 px-4 py-3 font-medium"><span className="sr-only">액션</span></th>
+                  <th className="w-24 px-4 py-3 font-medium">
+                    <span className="sr-only">액션</span>
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -148,20 +180,37 @@ export default async function UnassignedWorkPage({
                   >
                     <td className="px-4 py-3">
                       <Link
-                        href={issue.room ? `/rooms/${issue.room.id}` : `/issues/${issue.id}`}
+                        href={
+                          issue.room
+                            ? `/rooms/${issue.room.id}`
+                            : `/issues/${issue.id}`
+                        }
                         className="font-semibold hover:text-primary"
                       >
-                        {issue.room ? `${issue.room.branch} · ${issue.room.room_number}호` : "객실 정보 없음"}
+                        {issue.room
+                          ? `${issue.room.branch} · ${issue.room.room_number}호`
+                          : "객실 정보 없음"}
                       </Link>
                     </td>
-                    <td className="px-4 py-3 text-subtext">{ISSUE_CATEGORY_LABEL[issue.category]}</td>
-                    <td className="px-4 py-3"><UrgencyBadge urgency={issue.urgency} /></td>
-                    <td className="px-4 py-3">
-                      <p className="line-clamp-1 max-w-xs text-foreground/80">{issue.description}</p>
+                    <td className="px-4 py-3 text-subtext">
+                      {ISSUE_CATEGORY_LABEL[issue.category]}
                     </td>
-                    <td className="px-4 py-3"><IssueStatusBadge status={issue.status} /></td>
+                    <td className="px-4 py-3">
+                      <UrgencyBadge urgency={issue.urgency} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="line-clamp-1 max-w-xs text-foreground/80">
+                        {issue.description}
+                      </p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <IssueStatusBadge status={issue.status} />
+                    </td>
                     <td className="px-4 py-3 text-right">
-                      <Link href={`/issues/${issue.id}`} className="inline-flex text-xs font-semibold text-primary hover:underline">
+                      <Link
+                        href={`/issues/${issue.id}`}
+                        className="inline-flex text-xs font-semibold text-primary hover:underline"
+                      >
                         배정하기
                       </Link>
                     </td>
@@ -169,7 +218,10 @@ export default async function UnassignedWorkPage({
                 ))}
                 {unassignedIssues.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-10 text-center text-sm text-subtext">
+                    <td
+                      colSpan={6}
+                      className="px-4 py-10 text-center text-sm text-subtext"
+                    >
                       미배정 이슈가 없습니다.
                     </td>
                   </tr>

@@ -107,12 +107,15 @@ export default async function CleaningTasksPage({
           </p>
         </div>
 
+        {/* 나중에 다시 쓸 수도 있어 주석 처리. 청소 작업은 체크아웃에서만 자동 생성되므로,
+            문제가 생겼을 때는 이 버튼 대신 운영 이슈 화면에서 등록합니다.
         <Link
           href={cleaningIssueHref(baseParams)}
           className="flex h-9 items-center justify-center rounded-lg border border-card-border bg-card px-4 text-sm font-medium transition hover:bg-black/[0.03] dark:hover:bg-white/5"
         >
           청소 문제 접수
         </Link>
+        */}
       </header>
 
       {(urgentCount > 0 || unassignedCount > 0) && (
@@ -249,10 +252,14 @@ export default async function CleaningTasksPage({
 
                     <td className="px-4 py-3.5">
                       <Link href={`/cleaning/${task.id}`} className="block">
-                        <RiskBadge
-                          level={task.priority.riskLevel}
-                          label={formatBuffer(task.priority.bufferMinutes)}
-                        />
+                        {task.status === "done" ? (
+                          <span className="text-sm text-subtext">-</span>
+                        ) : (
+                          <RiskBadge
+                            level={task.priority.riskLevel}
+                            label={formatBuffer(task.priority.bufferMinutes)}
+                          />
+                        )}
                       </Link>
                     </td>
 
@@ -315,12 +322,13 @@ export default async function CleaningTasksPage({
   );
 }
 
-function cleaningIssueHref(baseParams: URLSearchParams) {
-  const params = new URLSearchParams(baseParams);
-  params.set("category", "cleaning");
-  params.set("reporter", "manager");
-  return `/issues/new?${params.toString()}`;
-}
+// 위 "청소 문제 접수" 버튼과 함께 주석 처리. 나중에 버튼을 되살릴 때 같이 씁니다.
+// function cleaningIssueHref(baseParams: URLSearchParams) {
+//   const params = new URLSearchParams(baseParams);
+//   params.set("category", "cleaning");
+//   params.set("reporter", "manager");
+//   return `/issues/new?${params.toString()}`;
+// }
 
 function CleaningAlertBanner({
   urgentCount,
