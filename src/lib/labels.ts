@@ -46,7 +46,7 @@ export const ISSUE_STATUS_LABEL: Record<IssueStatus, string> = {
   checking: "접수 확인",
   assigned: "크루 배정",
   in_progress: "처리 중",
-  inspection: "완료 확인",
+  inspection: "처리 완료",
   done: "완료",
 };
 

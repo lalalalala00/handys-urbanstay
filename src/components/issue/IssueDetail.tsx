@@ -10,6 +10,7 @@ import {
   IssueStatusAction,
 } from "@/components/issue/IssueActions";
 import { IssueCrewAssignment } from "@/components/issue/IssueCrewAssignment";
+import { IssueCompletionPanel } from "@/components/issue/IssueCompletionPanel";
 import { IssueChat } from "@/components/issue/IssueChat";
 import { RoomModalHeader } from "@/components/common/RoomModalHeader";
 import { ProgressTimeline } from "@/components/common/ProgressTimeline";
@@ -24,7 +25,28 @@ import {
 import { formatDateTime } from "@/lib/format";
 import { ISSUE_STATUS_NEXT, ISSUE_STEPS } from "@/lib/transitions";
 import { CATEGORY_DEFAULT_ROLE } from "@/lib/types";
-import type { Issue, Room, Staff } from "@/lib/types";
+import type { Issue, IssueStatus, Room, Staff } from "@/lib/types";
+
+// in_progress -> inspection ("처리 완료로 표시") and inspection -> done
+// ("처리 확인 완료") are handled by the dedicated crew/manager handoff cards
+// in IssueCompletionPanel, not the generic status-change buttons below.
+const AUTO_HANDLED_TRANSITIONS: Partial<Record<IssueStatus, IssueStatus[]>> = {
+  in_progress: ["inspection"],
+  inspection: ["done"],
+};
+
+function getCompletionDescription(status: IssueStatus): string {
+  switch (status) {
+    case "in_progress":
+      return "조치가 끝나면 크루가 처리 완료로 표시합니다.";
+    case "inspection":
+      return "담당자가 조치 내용을 확인하면 이슈가 종료됩니다.";
+    case "done":
+      return "크루 처리와 담당자 확인이 모두 완료되었습니다.";
+    default:
+      return "크루가 처리를 시작한 뒤 완료 처리를 진행합니다.";
+  }
+}
 
 export function IssueDetail({
   issue,
@@ -53,6 +75,10 @@ export function IssueDetail({
   // actually is.
   const crewStageReached =
     ISSUE_STEPS.indexOf(issue.status) >= ISSUE_STEPS.indexOf("assigned");
+
+  const manualAllowedNext = ISSUE_STATUS_NEXT[issue.status].filter(
+    (next) => !AUTO_HANDLED_TRANSITIONS[issue.status]?.includes(next)
+  );
 
   const [confirmingCrewName, setConfirmingCrewName] = useState<string | null>(
     null
@@ -215,7 +241,27 @@ export function IssueDetail({
               <IssueStatusAction
                 issueId={issue.id}
                 status={issue.status}
-                allowedNext={ISSUE_STATUS_NEXT[issue.status]}
+                allowedNext={manualAllowedNext}
+              />
+            </ActionSection>
+
+            <ActionSection
+              number={4}
+              title={
+                issue.status === "inspection"
+                  ? "담당자 확인"
+                  : issue.status === "done"
+                    ? "확인 완료"
+                    : "처리 완료 처리"
+              }
+              description={getCompletionDescription(issue.status)}
+              complete={issue.status === "done"}
+              summary={`담당자 확인 · ${manager?.name ?? "미배정"}`}
+            >
+              <IssueCompletionPanel
+                issueId={issue.id}
+                status={issue.status}
+                managerName={manager?.name ?? null}
               />
             </ActionSection>
           </ActionPanel>

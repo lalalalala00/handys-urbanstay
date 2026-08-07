@@ -35,7 +35,7 @@ export const CLEANING_TASK_NEXT: Record<CleaningTaskStatus, CleaningTaskStatus[]
 // drift ahead of who's actually on it.
 //
 // in_progress -> inspection -> done is a two-actor handoff: the crew marks
-// their work done (-> inspection, "완료 확인"), then the issue's manager
+// their work done (-> inspection, "처리 완료"), then the issue's manager
 // confirms (-> done). Each state only ever offers one forward option so
 // there's never a choice between two "done-ish" buttons at once.
 export const ISSUE_STATUS_NEXT: Record<IssueStatus, IssueStatus[]> = {

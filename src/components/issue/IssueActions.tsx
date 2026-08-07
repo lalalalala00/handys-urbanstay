@@ -199,7 +199,9 @@ export function IssueStatusAction({
         emptyMessage={
           status === "new" || status === "checking"
             ? "크루를 배정하면 자동으로 다음 단계로 전환됩니다."
-            : "모든 처리 단계가 완료되었습니다."
+            : status === "in_progress" || status === "inspection"
+              ? "아래 완료 처리 카드에서 다음 단계를 진행하세요."
+              : "모든 처리 단계가 완료되었습니다."
         }
       />
 
