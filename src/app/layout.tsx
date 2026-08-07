@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Sidebar } from "@/components/common/Sidebar";
 import { Header } from "@/components/common/Header";
 import { ToastProvider } from "@/components/common/Toast";
+import { LayoutAlignProvider } from "@/components/common/LayoutAlignProvider";
+import { AppShellFrame } from "@/components/common/AppShellFrame";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,18 +24,14 @@ export default function RootLayout({
       className="h-full antialiased"
     >
       <body className="h-full overflow-hidden">
-        <ToastProvider>
-          <div className="flex h-full w-full min-w-0 overflow-hidden">
-            <Sidebar />
-            <div className="flex min-w-0 flex-1 flex-col">
-              <Header />
-              <main className="min-w-0 flex-1 overflow-y-auto px-4 pb-28 pt-5 sm:px-6 sm:pt-6 lg:pb-6">
-                <div className="mx-auto w-full max-w-370">{children}</div>
-              </main>
-            </div>
-          </div>
-          {modal}
-        </ToastProvider>
+        <LayoutAlignProvider>
+          <ToastProvider>
+            <AppShellFrame sidebar={<Sidebar />} header={<Header />}>
+              {children}
+            </AppShellFrame>
+            {modal}
+          </ToastProvider>
+        </LayoutAlignProvider>
       </body>
     </html>
   );

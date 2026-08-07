@@ -44,6 +44,33 @@ export function ListIcon({ className }: IconProps) {
   );
 }
 
+export function LayoutFullIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="3" y="5" width="18" height="14" rx="1.5" />
+    </svg>
+  );
+}
+
+export function LayoutCenterIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="2.5" y="5" width="19" height="14" rx="1.5" opacity="0.4" />
+      <rect x="7.5" y="8" width="9" height="8" rx="1" />
+    </svg>
+  );
+}
+
+export function LayoutShellCenterIcon({ className }: IconProps) {
+  return (
+    <svg className={className} {...base}>
+      <rect x="2.5" y="5" width="19" height="14" rx="1.5" opacity="0.4" />
+      <rect x="6" y="7" width="12" height="10" rx="1" />
+      <path d="M9 7v10" />
+    </svg>
+  );
+}
+
 export function CleaningIcon({ className }: IconProps) {
   return (
     <svg className={className} {...base}>

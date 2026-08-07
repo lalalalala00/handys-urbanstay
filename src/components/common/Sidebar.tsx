@@ -3,18 +3,23 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import type { ComponentType } from "react";
 import {
   CalendarIcon,
   CleaningIcon,
   CrewIcon,
   DashboardIcon,
   IssueIcon,
+  LayoutCenterIcon,
+  LayoutFullIcon,
+  LayoutShellCenterIcon,
   LocationIcon,
   MessageIcon,
   ReportIcon,
   RoomIcon,
   SettingsIcon,
 } from "./icons";
+import { useLayoutAlign } from "./LayoutAlignProvider";
 
 const NAV_LINKS = [
   { href: "/", label: "대시보드", icon: DashboardIcon },
@@ -70,9 +75,13 @@ export function Sidebar() {
           </nav>
         </div>
 
-        <div className="rounded-xl border border-card-border bg-background p-3">
-          <p className="text-xs font-semibold">Operations MVP</p>
-          <p className="mt-1 text-[11px] leading-4 text-subtext">객실·청소·이슈 운영 흐름을 검증하는 과제 버전입니다.</p>
+        <div className="flex flex-col gap-3">
+          <LayoutWidthToggle />
+
+          <div className="rounded-xl border border-card-border bg-background p-3">
+            <p className="text-xs font-semibold">Operations MVP</p>
+            <p className="mt-1 text-[11px] leading-4 text-subtext">객실·청소·이슈 운영 흐름을 검증하는 과제 버전입니다.</p>
+          </div>
         </div>
       </aside>
 
@@ -159,4 +168,43 @@ function MobileNavLinks({ pathname, query }: { pathname: string; query: string }
 
 function isActivePath(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
+}
+
+const LAYOUT_WIDTH_OPTIONS: {
+  value: "full" | "center" | "centerAll";
+  label: string;
+  icon: ComponentType<{ className?: string }>;
+}[] = [
+  { value: "full", label: "전체 폭", icon: LayoutFullIcon },
+  { value: "center", label: "가운데 정렬", icon: LayoutCenterIcon },
+  { value: "centerAll", label: "진짜 가운데 정렬", icon: LayoutShellCenterIcon },
+];
+
+function LayoutWidthToggle() {
+  const { width, setWidth } = useLayoutAlign();
+
+  return (
+    <div className="flex items-center gap-1 rounded-lg border border-card-border p-1">
+      {LAYOUT_WIDTH_OPTIONS.map((option) => {
+        const active = width === option.value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setWidth(option.value)}
+            aria-label={option.label}
+            aria-current={active ? "true" : undefined}
+            title={option.label}
+            className={`flex h-8 flex-1 items-center justify-center rounded-md transition-colors ${
+              active
+                ? "bg-foreground text-background"
+                : "text-foreground/70 hover:bg-black/5 dark:hover:bg-white/5"
+            }`}
+          >
+            <option.icon className="h-4 w-4 shrink-0" />
+          </button>
+        );
+      })}
+    </div>
+  );
 }
